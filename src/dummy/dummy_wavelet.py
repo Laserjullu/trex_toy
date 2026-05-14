@@ -13,9 +13,14 @@ class Wavelet_Node:
 class DummyWaveletTree(AbstractWaveletTree):
    
     def __init__(self, alphabet: list[int]):
-        # expects a sequence of integers and expects a 
-        self.root = self.build(alphabet, min(alphabet), max(alphabet))
         self.length = len(alphabet)
+        # protection against empty A_prime, if G is already a spanning tree
+        if self.length == 0:
+            self.root = None
+        else:
+            # expects a sequence of integers
+            self.root = self.build(alphabet, min(alphabet), max(alphabet))
+        
     
     # adds log(m - n + 1) bits, but we dont have to call len(self.root.B.bits) anymore. 
     def __len__(self) -> int:
@@ -50,6 +55,10 @@ class DummyWaveletTree(AbstractWaveletTree):
 
     def access(self, i: int) -> int:
 
+        if self.root is None: 
+            print("Empty wavelet tree, shouldn't access")
+            return -1
+
         node = self.root
 
         while node.a != node.b:
@@ -63,7 +72,9 @@ class DummyWaveletTree(AbstractWaveletTree):
         return node.a
 
     def rank(self, i: int, letter: int) -> int:
-        
+        if self.root is None:
+            return 0
+
         # in the indegree as well as the outdegree calculation it checks the rank of a letter that is not 
         # in A' anymore, therefore we need this check 
         if letter < self.root.a or letter > self.root.b:
@@ -85,6 +96,9 @@ class DummyWaveletTree(AbstractWaveletTree):
 
 
     def select(self, j: int, letter: int) -> int:
+        if self.root is None:
+            print("Empty wavelet tree, there is no " + str(j) + "'th occurrence of " + str(letter))
+
         curr = self.root
         nodes = []
         directions = []
