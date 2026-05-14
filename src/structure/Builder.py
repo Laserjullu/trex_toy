@@ -35,15 +35,13 @@ class Builder:
         G_minus_T = G.copy()
         roots = []
         new_names = {}
-        subgraphs = []
         forest = nx.Graph()
 
-        # now we create spanning Trees for all the subgraphs and store them in one forest, we also remember each subgraph as well as the accoring root.
+        # now we create spanning Trees for all the subgraphs and store them in one forest, we also remember a root for each Tree
         for component in nx.connected_components(G_undirected):
 
             subgraph = G_undirected.subgraph(component)
             Tree = nx.minimum_spanning_tree(subgraph)
-            subgraphs.append(Tree)
             # arbitrary root choice for each weak component
             roots.append(list(Tree.nodes())[0])
             forest.add_edges_from(Tree.edges())
@@ -107,12 +105,16 @@ class Builder:
         m = G.number_of_edges()
         G_entropy_bitvector = 0
         n  = len(G.nodes())
-        G_array_entropy = m * math.ceil(math.log2(n)) + n * math.ceil(math.log2(m))
+        if m == 0:
+            G_array_entropy = 0
+        else:
+            G_array_entropy = m * math.ceil(math.log2(n)) + n * math.ceil(math.log2(m))
 
         
 
         for v in G.nodes():
             indegree = G.in_degree(v)
+            # already includes the case of m == 0
             if indegree > 0:
                 G_entropy_bitvector += indegree * math.log2(m/indegree)
         G_entropy_bitvector += math.log2(math.comb(m + n, n))
@@ -122,17 +124,19 @@ class Builder:
 
 
         reduced_entropy = 0
+        m_dash = G_minus_T.number_of_edges()
         for v in G_minus_T.nodes():
             indegree = G_minus_T.in_degree(v)
             if indegree > 0:
-                reduced_entropy += indegree * math.log2(m/indegree)
-        reduced_entropy += 3* G_minus_T.number_of_nodes() + math.log2(math.comb(m, G_minus_T.number_of_nodes()))
+                reduced_entropy += indegree * math.log2(m_dash/indegree)
+        # here we also have to check for m < n in the binomial coefficient
+        reduced_entropy += 3* G_minus_T.number_of_nodes() + math.log2(math.comb(m_dash + G_minus_T.number_of_nodes(), G_minus_T.number_of_nodes()))
 
         entropy_tuple = [G_array_entropy, G_entropy_bitvector, reduced_entropy]
 
 
         # makes testing a lot easier
-        if len(new_names) > 50:
+        if len(new_names) > 1000:
             new_names = {}
 
         return DirectedTrexGraph(T, A_prime, S_prime, D, entropy_tuple, len(roots), sorted(new_names.items()))
@@ -142,25 +146,27 @@ class Builder:
 
 
     def build_undirected(self, G: nx.Graph) -> UndirectedTrexGraph: 
-        G_directed = nx.DiGraph()
+        G_minus_T = nx.DiGraph()
+        # the undirected graph for the spanning Tree
         G_mst = nx.Graph()
 
+        # important , such that also isolated nodes are added
+        G_minus_T.add_nodes_from(G.nodes())
+        G_mst.add_nodes_from(G.nodes())
         # keeping the direction, that has the higher target degree
         for u, v in G.edges():
             weight = max(G.degree(v), G.degree(u))
 
             G_mst.add_edge(u,v, weight = weight)
             if G.degree(v) > G.degree(u):
-                G_directed.add_edge(u,v)
+                G_minus_T.add_edge(u,v)
             else:
-                G_directed.add_edge(v,u)
+                G_minus_T.add_edge(v,u)
 
 
-        
-        G_minus_T = G.copy()
+    
         roots = []
         new_names = {}
-        subgraphs = []
         forest = nx.Graph()
 
         
@@ -168,7 +174,6 @@ class Builder:
 
             subgraph = G_mst.subgraph(component)
             Tree = nx.minimum_spanning_tree(subgraph)
-            subgraphs.append(Tree)
             roots.append(list(Tree.nodes())[0])
             forest.add_edges_from(Tree.edges())
 
@@ -179,7 +184,6 @@ class Builder:
 
         nodes = {}
         forest_roots = []
-        D = [0] * len(G.nodes())
 
         i = 1
         bfs_edges = nx.bfs_edges(forest, "super_root")
@@ -194,10 +198,10 @@ class Builder:
                 nodes[child] = TreeNode()
                 nodes[parent].children.append(nodes[child])
 
-                if G_directed.has_edge(parent, child):
-                    G_directed.remove_edge(parent, child)
+                if G_minus_T.has_edge(parent, child):
+                    G_minus_T.remove_edge(parent, child)
                 else:
-                    G_directed.remove_edge(child, parent)
+                    G_minus_T.remove_edge(child, parent)
             i += 1
 
         A_prime = []
@@ -206,7 +210,7 @@ class Builder:
         # creation of A_prime and S_prime, we implicitly get all the original namings in the right order. 
         for original, i in new_names.items():
    
-            outneighbors = list(G_directed.successors(original))
+            outneighbors = list(G_minus_T.successors(original))
 
             for neighbor in outneighbors:
                 A_prime.append(new_names[neighbor])
@@ -227,7 +231,10 @@ class Builder:
         m = G.number_of_edges()
         G_entropy_bitvector = 0
         n  = len(G.nodes())
-        G_array_entropy = m * math.ceil(math.log2(n)) + n * math.ceil(math.log2(m))
+        if m == 0:
+            G_array_entropy = 0
+        else:
+            G_array_entropy = m * math.ceil(math.log2(n)) + n * math.ceil(math.log2(m))
 
         
 
@@ -242,19 +249,19 @@ class Builder:
 
 
         reduced_entropy = 0
-        for v in G_directed.nodes():
-            indegree = G_directed.in_degree(v)
+        m_dash = G_minus_T.number_of_edges()
+        for v in G_minus_T.nodes():
+            indegree = G_minus_T.in_degree(v)
             if indegree > 0:
-                reduced_entropy += indegree * math.log2(m/indegree)
-        reduced_entropy += 3* G_directed.number_of_nodes() + math.log2(math.comb(m, G_directed.number_of_nodes()))
+                reduced_entropy += indegree * math.log2(m_dash/indegree)
+        
+        reduced_entropy += 2* G_minus_T.number_of_nodes() + math.log2(math.comb(m_dash + G_minus_T.number_of_nodes(), G_minus_T.number_of_nodes()))
 
         entropy_tuple = [G_array_entropy, G_entropy_bitvector, reduced_entropy]
 
 
         # makes testing a lot easier
-        if len(new_names) > 50:
+        if len(new_names) > 1000:
             new_names = {}
 
         return UndirectedTrexGraph(T, A_prime, S_prime, entropy_tuple, len(roots),sorted(new_names.items()))
-
-
