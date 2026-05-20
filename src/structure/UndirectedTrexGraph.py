@@ -7,13 +7,14 @@ from src.dummy.dummy_bitvector import DummyBitvector
 
 class UndirectedTrexGraph:
 
-    def __init__(self, T: DummyLouds, A_prime: DummyWaveletTree, S_prime: DummyBitvector, entropy_tuple, num_of_trees: int, new_names: map = {}):
+    def __init__(self, T: DummyLouds, A_prime: DummyWaveletTree, S_prime: DummyBitvector, entropy_tuple, num_of_trees: int, alpha: float, new_names: map = {}):
         self.T = T
         self.A_prime= A_prime
         self.S_prime = S_prime
         self.new_names = new_names
         self.num_of_trees = num_of_trees
         self.entropy_tuple = entropy_tuple
+        self.alpha = alpha
 
     # for testing
     def print(self):
@@ -23,6 +24,7 @@ class UndirectedTrexGraph:
             print("S_prime': " + str(self.S_prime.bits))
             print("Renamings: " + str(self.new_names))
         print("Array based: " + str(self.entropy_tuple[0]) + ", Entropy with Wavelet Tree plus S but non reduced: " + str(self.entropy_tuple[1]) + ", Reduced: " + str(self.entropy_tuple[2]))
+        print("alpha: " + str(self.alpha))
     
     def degree(self, v: int) -> int:
         T_degree = self.T.degree(v)
@@ -90,9 +92,9 @@ class UndirectedTrexGraph:
         print(str(v) + " has no " + str(i) + "'th neighbor")
         return -1
         
-    # TODO
+    # this unfortunately isn't symmetric, but shoult it be? Do I even have to implement it? 
     def neighbor_rank(self, v: int, w: int) -> int:
-        # this unfortunately isn't symmetric, but shoult it be? Do I even have to implement it? 
+    
         if self.adjacent(v, w) == False:
             print(str(v) + " and " + str(w) + " are no neighbors")
             return -1

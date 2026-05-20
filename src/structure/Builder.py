@@ -5,6 +5,7 @@ from src.dummy.dummy_bitvector import DummyBitvector
 from structure.DirectedTrexGraph import DirectedTrexGraph
 from structure.UndirectedTrexGraph import UndirectedTrexGraph
 import math
+from src.functions.density import density_greedy
 
 
 class Builder:
@@ -13,12 +14,14 @@ class Builder:
         pass
 
 
-    def build(self, G: nx.DiGraph):
+    def build(self, G: nx.DiGraph, planar: bool = False):
 
         if isinstance(G, nx.DiGraph):
             return self.build_directed(G)
         if isinstance(G, nx.Graph):
             return self.build_undirected(G)
+        if planar:
+            print("coming soon :)")
 
         
     def build_directed(self, G: nx.DiGraph) -> DirectedTrexGraph:
@@ -134,12 +137,19 @@ class Builder:
 
         entropy_tuple = [G_array_entropy, G_entropy_bitvector, reduced_entropy]
 
+        # calculating alpha 
+        G_multigraph = nx.MultiGraph(G)
+        # choosing 13 Iterations, because in Boob et al's Paper it took 12.69 iterations to reach the optimum on avg. 
+        G_prime_density = density_greedy(G_multigraph, 13)[0]
+        G_density = G.number_of_edges() / G.number_of_nodes()
+        alpha = G_prime_density / G_density
+    
 
         # makes testing a lot easier
         if len(new_names) > 1000:
             new_names = {}
 
-        return DirectedTrexGraph(T, A_prime, S_prime, D, entropy_tuple, len(roots), sorted(new_names.items()))
+        return DirectedTrexGraph(T, A_prime, S_prime, D, entropy_tuple, len(roots), alpha, sorted(new_names.items()))
     
 
 
@@ -259,9 +269,17 @@ class Builder:
 
         entropy_tuple = [G_array_entropy, G_entropy_bitvector, reduced_entropy]
 
+        # calculating alpha 
+        G_prime_density = density_greedy(G, 13)[0]
+        G_density = G.number_of_edges() / G.number_of_nodes()
+        alpha = G_prime_density / G_density
 
         # makes testing a lot easier
         if len(new_names) > 1000:
             new_names = {}
 
-        return UndirectedTrexGraph(T, A_prime, S_prime, entropy_tuple, len(roots),sorted(new_names.items()))
+        return UndirectedTrexGraph(T, A_prime, S_prime, entropy_tuple, len(roots), alpha, sorted(new_names.items()))
+    
+
+        def build_planar(self, g: nx.Graph):
+            f = 1
