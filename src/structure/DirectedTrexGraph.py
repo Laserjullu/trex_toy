@@ -8,7 +8,7 @@ from src.dummy.dummy_bitvector import DummyBitvector
 class DirectedTrexGraph:
 
     # new_names are only given if n < a certain threshhold (atm 50), also wrong type hint at the moment, but I guess that's fine 
-    def __init__(self, T: DummyLouds, A_prime: DummyWaveletTree, S_prime: DummyBitvector, D: DummyBitvector, entropy_tuple, num_of_trees: int, alpha: float, new_names: dict):
+    def __init__(self, T: DummyLouds, A_prime: DummyWaveletTree, S_prime: DummyBitvector, D: DummyBitvector, entropy_tuple, num_of_trees: int, alpha: float, normalized_difference: float, new_names: dict):
         self.T = T
         self.A_prime= A_prime
         self.S_prime = S_prime
@@ -18,6 +18,7 @@ class DirectedTrexGraph:
         self.alpha = alpha
         # this can also be done by using constant time self.T.parent(v) != 0, but i preferred this option for a tiny bit more speed.
         self.num_of_trees = num_of_trees
+        self.normalized_difference = normalized_difference
 
     # for testing
     def print(self):
@@ -28,7 +29,9 @@ class DirectedTrexGraph:
             print("D: " + str(self.D.bits))
             print("Renamings: " + str(self.new_names))
         print("n: " + str(len(self.D.bits)))
-        print("Array based: " + str(self.entropy_tuple[0]) + ", Entropy with Wavelet Tree plus S but non reduced: " + str(self.entropy_tuple[1]) + ", Reduced: " + str(self.entropy_tuple[2]))
+        print("Array based: " + str(self.entropy_tuple[0]) + ", Entropy with Wavelet Tree plus S but non reduced: " + str(self.entropy_tuple[1]) + ", Reduced: " + str(self.entropy_tuple[2]) + ", Planar: " + str(self.entropy_tuple[3]))
+        print("alpha: " + str(self.alpha))
+        print("normalized difference: " + str(self.normalized_difference))
     def outdegree(self,v: int) -> int:
         # how many zeros (out-edges) there are after our 1 to the next 1 
         outgoing_A_prime = self.S_prime.select(v + 1, 1) - self.S_prime.select(v,1) - 1

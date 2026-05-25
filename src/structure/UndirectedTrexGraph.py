@@ -7,7 +7,7 @@ from src.dummy.dummy_bitvector import DummyBitvector
 
 class UndirectedTrexGraph:
 
-    def __init__(self, T: DummyLouds, A_prime: DummyWaveletTree, S_prime: DummyBitvector, entropy_tuple, num_of_trees: int, alpha: float, new_names: map = {}):
+    def __init__(self, T: DummyLouds, A_prime: DummyWaveletTree, S_prime: DummyBitvector, entropy_tuple, num_of_trees: int, alpha: float, normalized_difference: float, new_names: map = {}):
         self.T = T
         self.A_prime= A_prime
         self.S_prime = S_prime
@@ -15,6 +15,7 @@ class UndirectedTrexGraph:
         self.num_of_trees = num_of_trees
         self.entropy_tuple = entropy_tuple
         self.alpha = alpha
+        self.normalized_difference = normalized_difference
 
     # for testing
     def print(self):
@@ -23,8 +24,9 @@ class UndirectedTrexGraph:
             print("A_prime : some wavelet tree with root: " + str(self.A_prime.root.B.bits))
             print("S_prime': " + str(self.S_prime.bits))
             print("Renamings: " + str(self.new_names))
-        print("Array based: " + str(self.entropy_tuple[0]) + ", Entropy with Wavelet Tree plus S but non reduced: " + str(self.entropy_tuple[1]) + ", Reduced: " + str(self.entropy_tuple[2]))
+        print("Array based: " + str(self.entropy_tuple[0]) + ", Entropy with Wavelet Tree plus S but non reduced: " + str(self.entropy_tuple[1]) + ", Reduced: " + str(self.entropy_tuple[2]) + ", Planar: " + str(self.entropy_tuple[3]))
         print("alpha: " + str(self.alpha))
+        print("normalized difference: " + str(self.normalized_difference))
     
     def degree(self, v: int) -> int:
         T_degree = self.T.degree(v)
