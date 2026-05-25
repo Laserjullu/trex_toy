@@ -7,6 +7,8 @@ from structure.UndirectedTrexGraph import UndirectedTrexGraph
 import math
 from src.functions.density import density_greedy
 from networkx.utils import UnionFind
+from tqdm import tqdm
+import time
 
 
 class Builder:
@@ -18,8 +20,7 @@ class Builder:
     def build(self, G, planar: bool = False):
         if planar and isinstance(G, nx.DiGraph):
             print("Planar entropy is here:)")
-            print(self.build_planar(G))
-            return self.build_directed(G)
+            return self.build_planar(G)
         else: 
             if isinstance(G, nx.DiGraph):
                 return self.build_directed(G)
@@ -31,7 +32,9 @@ class Builder:
     def build_directed(self, G: nx.DiGraph) -> DirectedTrexGraph:
         
         # we determine the weights by taking the lower indegree of both target vertices, if existing.
+        print("making it undirected" + str(time.time()))
         G_undirected = G.to_undirected()
+        print("finished the undirected version" + str(time.time()))
         for u, v in G.edges():
             weight = G.in_degree(v)
             if G.has_edge(v, u):
@@ -45,7 +48,7 @@ class Builder:
         forest = nx.Graph()
 
         # now we create spanning Trees for all the subgraphs and store them in one forest, we also remember a root for each Tree
-        for component in nx.connected_components(G_undirected):
+        for component in tqdm(nx.connected_components(G_undirected), total = len(list(nx.connected_components(G_undirected)))):
 
             subgraph = G_undirected.subgraph(component)
             Tree = nx.minimum_spanning_tree(subgraph)
@@ -66,7 +69,7 @@ class Builder:
         # simple bfs for renaming and extraction, where we also remembering the mapping and determining D, we don't need the inverse mapping, 
         # because we can use .items() to later have access to it. 
         bfs_edges = nx.bfs_edges(forest, "super_root")
-        for parent, child in bfs_edges:
+        for parent, child in tqdm(bfs_edges, total = len(list(bfs_edges))):
             if parent == "super_root":
                 new_names[child] = i
                 nodes[child] = TreeNode()
@@ -88,7 +91,7 @@ class Builder:
         S_prime = []
 
         # creation of A_prime and S_prime, we implicitly get all the original namings in the right order. 
-        for original, i in new_names.items():
+        for original, i in tqdm(new_names.items(), total = len(new_names.items())):
    
             outneighbors = list(G_minus_T.successors(original))
 
@@ -119,7 +122,7 @@ class Builder:
 
         
 
-        for v in G.nodes():
+        for v in tqdm(G.nodes(), total = len(G.nodes())):
             indegree = G.in_degree(v)
             # already includes the case of m == 0
             if indegree > 0:
@@ -132,7 +135,7 @@ class Builder:
 
         reduced_entropy = 0
         m_dash = G_minus_T.number_of_edges()
-        for v in G_minus_T.nodes():
+        for v in tqdm(G_minus_T.nodes(), total = len(G_minus_T.nodes())):
             indegree = G_minus_T.in_degree(v)
             if indegree > 0:
                 reduced_entropy += indegree * math.log2(m_dash/indegree)
@@ -141,15 +144,21 @@ class Builder:
         # extra zero in case planar is added later on. 
         entropy_tuple = [G_array_entropy, G_entropy_bitvector, reduced_entropy, -1]
 
+        start = time.time()
         # calculating alpha 
         G_multigraph = nx.MultiGraph()
         # need to manually add the edges, otherwise only one direction is added. 
         G_multigraph.add_edges_from(G.edges)
         G_multigraph.add_nodes_from(G.nodes)
         # choosing 13 Iterations, because in Boob et al's Paper it took 12.69 iterations to reach the optimum on avg. 
+        print("begging of Greedy alpha determination: ")
+        start = time.time()
         G_prime_density = density_greedy(G_multigraph, 13)[0]
         G_density = G.number_of_edges() / G.number_of_nodes()
         alpha = G_prime_density / G_density
+        print("Greedy took: "+ str(time.time()-start))
+
+
 
 
         H_indegree = 0
@@ -306,8 +315,7 @@ class Builder:
     
 
     def build_planar(self, G: nx.DiGraph):
-        builder = Builder()
-        G_built = builder.build(G)
+        G_built = self.build(G)
         union_find = UnionFind()
         planar_edges = set()
         G_undirected = G.to_undirected()
@@ -321,7 +329,7 @@ class Builder:
 
         # Finding all triangles 
         triangles = []
-        for u in G_undirected.nodes():
+        for u in tqdm(G_undirected.nodes(), total = len(list(G_undirected.nodes()))):
             u_neighbors = set(G_undirected.neighbors(u))
             for v in u_neighbors:
                 both_neighbors = u_neighbors.intersection(G_undirected.neighbors(v))
