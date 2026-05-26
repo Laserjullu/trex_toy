@@ -1,4 +1,5 @@
 import networkx as nx
+from tqdm import tqdm
 
 
 # Implementation of Greedy++ from "Flowless: Extracting Densest Subgraphs Without Flow Computations" with added support for multigraphs, using the exact same density definition.
@@ -18,7 +19,7 @@ def density_greedy(G, iterations):
     best_density = 0.0  # Highest density encountered.
     best_subgraph = set()  # Nodes of the best subgraph found.
 
-    for _ in range(iterations):
+    for _ in tqdm(range(iterations)):
         # Initialize heap for fast access to minimum weighted degree.
         heap = nx.utils.BinaryHeap()
 
@@ -53,7 +54,10 @@ def density_greedy(G, iterations):
             for neighbor in G.neighbors(node):
                 if neighbor in remaining_nodes:
                     # first determine the number of parallel edges and then subtract accordingly, implicitly works on regular Graphs as well. Rest of the method alrady properly works on multigraphs too. 
-                    multiplicity = G.number_of_edges(node, neighbor)
+                    if 'weight' in G[node][neighbor]:
+                        multiplicity = G[node][neighbor]['weight']
+                    else:
+                        multiplicity = 1
                     current_degrees[neighbor] -= multiplicity
                     num_edges -= multiplicity
                     heap.insert(neighbor, loads[neighbor] + current_degrees[neighbor])

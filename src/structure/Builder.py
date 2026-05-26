@@ -56,6 +56,7 @@ class Builder:
             roots.append(list(Tree.nodes())[0])
             forest.add_edges_from(Tree.edges())
 
+        del G_undirected
         # we add this super root, such that we can run bfs on the forest for renaming
         forest.add_node("super_root")
         for root in roots:
@@ -69,6 +70,8 @@ class Builder:
         # simple bfs for renaming and extraction, where we also remembering the mapping and determining D, we don't need the inverse mapping, 
         # because we can use .items() to later have access to it. 
         bfs_edges = nx.bfs_edges(forest, "super_root")
+        del forest
+
         for parent, child in tqdm(bfs_edges, total = len(list(bfs_edges))):
             if parent == "super_root":
                 new_names[child] = i
@@ -146,14 +149,21 @@ class Builder:
 
         start = time.time()
         # calculating alpha 
-        G_multigraph = nx.MultiGraph()
+        G_weighted = nx.Graph()
         # need to manually add the edges, otherwise only one direction is added. 
-        G_multigraph.add_edges_from(G.edges)
-        G_multigraph.add_nodes_from(G.nodes)
+        G_weighted.add_nodes_from(G.nodes)
+        for u, v in G.edges():
+            if G_weighted.has_edge(u,v):
+                G_weighted[u][v]['weight'] += 1
+            else:
+                G_weighted.add_edge(u,v, weight = 1)
+        
         # choosing 13 Iterations, because in Boob et al's Paper it took 12.69 iterations to reach the optimum on avg. 
         print("begging of Greedy alpha determination: ")
         start = time.time()
-        G_prime_density = density_greedy(G_multigraph, 13)[0]
+        G_prime_density = density_greedy(G_weighted, 13)[0]
+        del G_weighted
+
         G_density = G.number_of_edges() / G.number_of_nodes()
         alpha = G_prime_density / G_density
         print("Greedy took: "+ str(time.time()-start))
