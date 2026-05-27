@@ -54,10 +54,7 @@ def density_greedy(G, iterations):
             for neighbor in G.neighbors(node):
                 if neighbor in remaining_nodes:
                     # first determine the number of parallel edges and then subtract accordingly, implicitly works on regular Graphs as well. Rest of the method alrady properly works on multigraphs too. 
-                    if 'weight' in G[node][neighbor]:
-                        multiplicity = G[node][neighbor]['weight']
-                    else:
-                        multiplicity = 1
+                    multiplicity = G.number_of_edges(node, neighbor)
                     current_degrees[neighbor] -= multiplicity
                     num_edges -= multiplicity
                     heap.insert(neighbor, loads[neighbor] + current_degrees[neighbor])

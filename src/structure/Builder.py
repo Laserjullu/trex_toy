@@ -47,8 +47,10 @@ class Builder:
         new_names = {}
         forest = nx.Graph()
 
+
+        components = list(nx.connected_components(G_undirected))
         # now we create spanning Trees for all the subgraphs and store them in one forest, we also remember a root for each Tree
-        for component in tqdm(nx.connected_components(G_undirected), total = len(list(nx.connected_components(G_undirected)))):
+        for component in tqdm(components, total = len(components)):
 
             subgraph = G_undirected.subgraph(component)
             Tree = nx.minimum_spanning_tree(subgraph)
@@ -70,9 +72,10 @@ class Builder:
         # simple bfs for renaming and extraction, where we also remembering the mapping and determining D, we don't need the inverse mapping, 
         # because we can use .items() to later have access to it. 
         bfs_edges = nx.bfs_edges(forest, "super_root")
+        bfs_edges_list = list(bfs_edges)
         del forest
 
-        for parent, child in tqdm(bfs_edges, total = len(list(bfs_edges))):
+        for parent, child in tqdm(bfs_edges_list, total = len(bfs_edges_list)):
             if parent == "super_root":
                 new_names[child] = i
                 nodes[child] = TreeNode()
@@ -137,47 +140,44 @@ class Builder:
 
 
         reduced_entropy = 0
+        reduced_indegree_entropy = 0
         m_dash = G_minus_T.number_of_edges()
         for v in tqdm(G_minus_T.nodes(), total = len(G_minus_T.nodes())):
             indegree = G_minus_T.in_degree(v)
             if indegree > 0:
-                reduced_entropy += indegree * math.log2(m_dash/indegree)
-        reduced_entropy += 3* G_minus_T.number_of_nodes() + math.log2(math.comb(m_dash + G_minus_T.number_of_nodes(), G_minus_T.number_of_nodes()))
+                reduced_indegree_entropy += indegree * math.log2(m_dash/indegree)
+        reduced_entropy += reduced_indegree_entropy + 3* G_minus_T.number_of_nodes() + math.log2(math.comb(m_dash + G_minus_T.number_of_nodes(), G_minus_T.number_of_nodes()))
 
         # extra zero in case planar is added later on. 
         entropy_tuple = [G_array_entropy, G_entropy_bitvector, reduced_entropy, -1]
 
         start = time.time()
         # calculating alpha 
-        G_weighted = nx.Graph()
+        G_multigraph = nx.MultiGraph()
         # need to manually add the edges, otherwise only one direction is added. 
-        G_weighted.add_nodes_from(G.nodes)
-        for u, v in G.edges():
-            if G_weighted.has_edge(u,v):
-                G_weighted[u][v]['weight'] += 1
-            else:
-                G_weighted.add_edge(u,v, weight = 1)
+        G_multigraph.add_edges_from(G.edges)
+        G_multigraph.add_nodes_from(G.nodes)
         
         # choosing 13 Iterations, because in Boob et al's Paper it took 12.69 iterations to reach the optimum on avg. 
-        print("begging of Greedy alpha determination: ")
+        print("beginning of Greedy alpha determination: ")
         start = time.time()
-        G_prime_density = density_greedy(G_weighted, 13)[0]
-        del G_weighted
+        G_prime_density = density_greedy(G_multigraph, 13)[0]
+        del G_multigraph
 
         G_density = G.number_of_edges() / G.number_of_nodes()
         alpha = G_prime_density / G_density
-        print("Greedy took: "+ str(time.time()-start))
-
+        print("Greedy took: " + str(time.time()-start))
 
 
 
         H_indegree = 0
         if m > 0:
             H_indegree = (entropy_tuple[1] - math.log2(math.comb(m+n,n)))/m
+        
 
-        upper_bound = entropy_tuple[1] - ((n)/(2 * alpha)) * H_indegree + (2* n)/math.log(2)
+        upper_bound = H_indegree * m - ((n)/(2 * alpha)) * H_indegree + (2* n)/math.log(2)
 
-        normalized_difference = (upper_bound - entropy_tuple[2] )/ ( n * math.log2(n))
+        normalized_difference = (upper_bound - reduced_indegree_entropy)/ ( n * math.log2(n))
 
         # makes testing a lot easier
         if len(new_names) > 1000:
@@ -278,7 +278,7 @@ class Builder:
             G_array_entropy = m * math.ceil(math.log2(n)) + n * math.ceil(math.log2(m))
 
         
-
+        # need to change this calculation still for undirected case. 
         for v in G.nodes():
             degree = G.degree(v)
             if degree > 0:
@@ -290,13 +290,14 @@ class Builder:
 
 
         reduced_entropy = 0
+        reduced_indegree_entropy = 0
         m_dash = G_minus_T.number_of_edges()
         for v in G_minus_T.nodes():
             indegree = G_minus_T.in_degree(v)
             if indegree > 0:
-                reduced_entropy += indegree * math.log2(m_dash/indegree)
+                reduced_indegree_entropy += indegree * math.log2(m_dash/indegree)
         
-        reduced_entropy += 2* G_minus_T.number_of_nodes() + math.log2(math.comb(m_dash + G_minus_T.number_of_nodes(), G_minus_T.number_of_nodes()))
+        reduced_entropy += reduced_indegree_entropy + 2* G_minus_T.number_of_nodes() + math.log2(math.comb(m_dash + G_minus_T.number_of_nodes(), G_minus_T.number_of_nodes()))
 
         # inserted extra -1 to assure that the tuple size always matches, no matter if we also calculate planar entropy
         entropy_tuple = [G_array_entropy, G_entropy_bitvector, reduced_entropy, -1]
@@ -312,9 +313,9 @@ class Builder:
         if m > 0:
             H_indegree = (entropy_tuple[1] - math.log2(math.comb(m+n,n)))/m
 
-        upper_bound = entropy_tuple[1] - ((n)/(2 * alpha)) * H_indegree + (2* n)/math.log(2)
+        upper_bound = H_indegree * m - ((n)/(2 * alpha)) * H_indegree + (2* n)/math.log(2)
 
-        normalized_difference = (upper_bound - entropy_tuple[2] )/ ( n * math.log2(n))
+        normalized_difference = (upper_bound - reduced_indegree_entropy )/ ( n * math.log2(n))
         
 
         # makes testing a lot easier
