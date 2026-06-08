@@ -7,15 +7,19 @@ from src.dummy.dummy_bitvector import DummyBitvector
 
 class UndirectedTrexGraph:
 
-    def __init__(self, T: DummyLouds, A_prime: DummyWaveletTree, S_prime: DummyBitvector, entropy_tuple, num_of_trees: int, alpha: float, normalized_difference: float, new_names: map = {}):
+    def __init__(self, T: DummyLouds, A_prime: DummyWaveletTree, S_prime: DummyBitvector, entropy_tuple, num_of_trees: int, alpha_16: float, non_zero_indegrees: int, upper_bound_16: float, upper_bound_17: float, indegree_variance: float, num_classes: int, new_names: map = {}):
         self.T = T
         self.A_prime= A_prime
         self.S_prime = S_prime
         self.new_names = new_names
         self.num_of_trees = num_of_trees
         self.entropy_tuple = entropy_tuple
-        self.alpha = alpha
-        self.normalized_difference = normalized_difference
+        self.alpha_16 = alpha_16
+        self.non_zero_indegrees = non_zero_indegrees
+        self.upper_bound_16 = upper_bound_16
+        self.upper_bound_17 = upper_bound_17
+        self.indegree_variance = indegree_variance
+        self.num_classes = num_classes
 
     # for testing
     def print(self):
