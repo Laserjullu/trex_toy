@@ -19,9 +19,8 @@ class Builder:
 
 
     def build(self, G, planar: bool = False):
-        if planar and isinstance(G, nx.DiGraph):
-            print("Planar entropy is here:)")
-            return self.build_planar(G)
+        if planar:
+                return self.build_planar(G)
         else: 
             if isinstance(G, nx.DiGraph):
                 return self.build_directed(G)
@@ -217,92 +216,136 @@ class Builder:
         return UndirectedTrexGraph(T, A_prime, S_prime, entropy_tuple, len(roots), alpha_16, non_zero_indegrees, upper_bound_16, upper_bound_17, indegree_variance, num_classes, sorted(new_names.items()))
     
 
-    def build_planar(self, G: nx.DiGraph):
-        G_built = self.build(G)
+    def build_planar(self, G):
+        if isinstance(G, nx.DiGraph):   
+            G_built = self.build(G)
+            G_undirected = G.to_undirected()
+
+            for u, v in G.edges():
+                weight = G.in_degree(v)
+                if G.has_edge(v, u):
+                    weight = min(G.in_degree(u), weight)
+                G_undirected[u][v]['weight'] = weight
+            
+            planar_edges, G_prime = self.extract_planar_edges(G_undirected, G.copy(), G)
+            
+            planar_entropy = 0
+            m_dash = G_prime.number_of_edges()
+            for v in G_prime.nodes():
+                indegree = G_prime.in_degree(v)
+                if indegree > 0:
+                    planar_entropy += indegree * math.log2(m_dash/indegree)
+            planar_entropy += 2.092 * G.number_of_nodes() + len(planar_edges) + math.log2(math.comb(m_dash + G_prime.number_of_nodes(), G_prime.number_of_nodes()))
+
+
+            G_built.entropy_tuple[3] = planar_entropy
+        
+            return G_built
+
+        elif isinstance(G, nx.Graph):
+            G_built = self.build(G)
+            G_prime = nx.DiGraph()
+            G_prime.add_nodes_from(G.nodes())
+            G_undirected = G.copy()
+            for u, v in G.edges():
+                weight = max(G.degree(v), G.degree(u))
+                G_undirected[u][v]['weight'] = weight
+                if G.degree(v) > G.degree(u):
+                    G_prime.add_edge(u,v)
+                else:
+                    G_prime.add_edge(v,u)
+            planar_edges, G_prime = self.extract_planar_edges(G_undirected, G_prime)
+
+    
+
+            planar_entropy = 0
+            m_dash = G_prime.number_of_edges()
+            for v in G_prime.nodes():
+                indegree = G_prime.in_degree(v)
+                if indegree > 0:
+                    planar_entropy += indegree * math.log2(m_dash/indegree)
+            # 2.5 because we leave out the edges for the direction bitvector.
+            planar_entropy += 2.092 * G.number_of_nodes() + math.log2(math.comb(m_dash + G_prime.number_of_nodes(), G_prime.number_of_nodes()))
+
+
+            G_built.entropy_tuple[5] = planar_entropy
+
+            return G_built
+
+    def extract_planar_edges(self, G_undirected: nx.Graph, G_prime: nx.DiGraph, G_original: nx.DiGraph = None):
         union_find = UnionFind()
         planar_edges = set()
-        G_undirected = G.to_undirected()
-        G_prime = G.copy()
-
-        for u, v in G.edges():
-            weight = G.in_degree(v)
-            if G.has_edge(v, u):
-                weight = min(G.in_degree(u), weight)
-            G_undirected[u][v]['weight'] = weight
-
-        # Finding all triangles 
         triangles = []
-        for u in tqdm(G_undirected.nodes(), total = len(list(G_undirected.nodes()))):
+        # Finding all triangles 
+        for u in G_undirected.nodes():
             u_neighbors = set(G_undirected.neighbors(u))
             for v in u_neighbors:
                 both_neighbors = u_neighbors.intersection(G_undirected.neighbors(v))
                 for w in both_neighbors:
                     # making sure that there are no duplicates
-                    if v<w<u:
-                        triangle_weight = G_undirected[u][v]['weight'] + G_undirected[v][w]['weight'] + G_undirected[w][u]['weight']
+                    if v<w<u: 
+                        triangle_weight = G_undirected[u][v]["weight"] + G_undirected[v][w]["weight"] + G_undirected[w][u]["weight"]
                         triangles.append((triangle_weight, u, v, w))
-        
-
-        # the whole combining process, while adding the edges to the planar subgraph
+                
         for (triangle_weight, u, v, w) in sorted(triangles):
             if union_find[u] != union_find[v] and union_find[v] != union_find[w] and union_find[u] != union_find[w]:
 
-                if G_prime.has_edge(u,v) and not G_prime.has_edge(v,u):
-                    planar_edges.add((u,v))
-                    G_prime.remove_edge(u,v)
-                elif G_prime.has_edge(v,u) and not G_prime.has_edge(u,v):
-                    planar_edges.add((v,u))
-                    G_prime.remove_edge(v,u)
-                else:
-                    if G.in_degree(u) > G.in_degree(v):
+                    if G_prime.has_edge(u,v) and not G_prime.has_edge(v,u):
                         planar_edges.add((u,v))
                         G_prime.remove_edge(u,v)
-                    else:
+                    elif G_prime.has_edge(v,u) and not G_prime.has_edge(u,v):
                         planar_edges.add((v,u))
                         G_prime.remove_edge(v,u)
-                
-                if G_prime.has_edge(v,w) and not G_prime.has_edge(w,v):
-                    planar_edges.add((v,w))
-                    G_prime.remove_edge(v,w)
-                elif G_prime.has_edge(w,v) and not G_prime.has_edge(v,w):
-                    planar_edges.add((w,v))
-                    G_prime.remove_edge(w,v)
-                else:
-                    if G.in_degree(v) > G.in_degree(w):
+                    else:
+                        if G_original.in_degree(u) > G_original.in_degree(v):
+                            planar_edges.add((u,v))
+                            G_prime.remove_edge(u,v)
+                        else:
+                            planar_edges.add((v,u))
+                            G_prime.remove_edge(v,u)
+                    
+                    if G_prime.has_edge(v,w) and not G_prime.has_edge(w,v):
                         planar_edges.add((v,w))
                         G_prime.remove_edge(v,w)
-                    else:
+                    elif G_prime.has_edge(w,v) and not G_prime.has_edge(v,w):
                         planar_edges.add((w,v))
                         G_prime.remove_edge(w,v)
+                    else:
+                        if G_original.in_degree(v) > G_original.in_degree(w):
+                            planar_edges.add((v,w))
+                            G_prime.remove_edge(v,w)
+                        else:
+                            planar_edges.add((w,v))
+                            G_prime.remove_edge(w,v)
 
-                if G_prime.has_edge(w,u) and not G_prime.has_edge(u,w):
-                    planar_edges.add((w,u))
-                    G_prime.remove_edge(w,u)
-                elif G_prime.has_edge(u,w) and not G_prime.has_edge(w,u):
-                    planar_edges.add((u,w))
-                    G_prime.remove_edge(u,w)
-                else: 
-                    if G.in_degree(w) > G.in_degree(u):
+                    if G_prime.has_edge(w,u) and not G_prime.has_edge(u,w):
                         planar_edges.add((w,u))
                         G_prime.remove_edge(w,u)
-                    else:
+                    elif G_prime.has_edge(u,w) and not G_prime.has_edge(w,u):
                         planar_edges.add((u,w))
                         G_prime.remove_edge(u,w)
-                union_find.union(u,v)
-                union_find.union(v,w)
-                union_find.union(u,w)
+                    else: 
+                        if G_original.in_degree(w) > G_original.in_degree(u):
+                            planar_edges.add((w,u))
+                            G_prime.remove_edge(w,u)
+                        else:
+                            planar_edges.add((u,w))
+                            G_prime.remove_edge(u,w)
+                    union_find.union(u,v)
+                    union_find.union(v,w)
+                    union_find.union(u,w)
 
-
-        # adding remaining edges, that are not in triangles
+        # adding remaining edges, which are not in a triangle
 
         def weight_key(edge):
-            return G_undirected[edge[0]][edge[1]]['weight']
-
+            return G_undirected[edge[0]][edge[1]]["weight"]
+            
         for u, v in sorted(G_undirected.edges(), key = weight_key):
+            # check if edge has already been removed
             if not G_prime.has_edge(u,v) and not G_prime.has_edge(v,u):
                 continue
+
             if union_find[u] != union_find[v]:
-            
                 if G_prime.has_edge(u,v) and not G_prime.has_edge(v,u):
                     planar_edges.add((u,v))
                     G_prime.remove_edge(u,v)
@@ -310,30 +353,14 @@ class Builder:
                     planar_edges.add((v,u))
                     G_prime.remove_edge(v,u)
                 else:
-                    if G.in_degree(u) > G.in_degree(v):
+                    if G_original.in_degree(u) > G_original.in_degree(v):
                         planar_edges.add((u,v))
                         G_prime.remove_edge(u,v)
                     else:
                         planar_edges.add((v,u))
                         G_prime.remove_edge(v,u)
                 union_find.union(u,v)
-
-
-
-        # entropy calculation
-        reduced_entropy = 0
-        m_dash = G_prime.number_of_edges()
-        for v in G_prime.nodes():
-            indegree = G_prime.in_degree(v)
-            if indegree > 0:
-                reduced_entropy += indegree * math.log2(m_dash/indegree)
-        reduced_entropy += 4 * len(planar_edges) + math.log2(math.comb(m_dash + G_prime.number_of_nodes(), G_prime.number_of_nodes()))
-
-
-        G_built.entropy_tuple[3] = reduced_entropy
-    
-        return G_built
-
+        return planar_edges, G_prime
 
     def directed_metrics(self, G: nx.DiGraph, G_minus_T: nx.DiGraph):
          # entropy calculation
@@ -475,7 +502,7 @@ class Builder:
         
         reduced_entropy += reduced_indegree_entropy + 2* G_minus_T.number_of_nodes() + math.log2(math.comb(m_dash + G_minus_T.number_of_nodes(), G_minus_T.number_of_nodes()))
 
-        entropy_tuple = [G_array_entropy, G_entropy_bitvector, G_entropy_bitvector_random, G_entropy_bitvector_greedy, reduced_entropy]
+        entropy_tuple = [G_array_entropy, G_entropy_bitvector, G_entropy_bitvector_random, G_entropy_bitvector_greedy, reduced_entropy, -1]
 
         start = time.time()
 
@@ -504,7 +531,7 @@ class Builder:
         indegrees = []
         for v in G_greedy.nodes():
             indegrees.append(G_greedy.in_degree(v))
-        indegree_variance = np.var(indegrees)
+        indegree_variance = np.var(indegrees) if len(indegrees) > 0 else 0.0
 
         twin_classes = {}
         for v in G.nodes():
