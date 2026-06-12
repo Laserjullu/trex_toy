@@ -30,9 +30,12 @@ def density_greedy(G, iterations):
         remaining_nodes = set(G.nodes)
         num_edges = G.number_of_edges()
         current_degrees = dict(G.degree)
-
+        pbar = tqdm(total=len(remaining_nodes))
         while remaining_nodes:
             num_nodes = len(remaining_nodes)
+            if num_nodes % 1000 == 0:
+                pbar.update(1000)
+            
 
             # Current density of the (implicit) graph
             current_density = num_edges / num_nodes

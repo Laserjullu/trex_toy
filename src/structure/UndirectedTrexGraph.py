@@ -7,19 +7,13 @@ from src.dummy.dummy_bitvector import DummyBitvector
 
 class UndirectedTrexGraph:
 
-    def __init__(self, T: DummyLouds, A_prime: DummyWaveletTree, S_prime: DummyBitvector, entropy_tuple, num_of_trees: int, alpha_16: float, non_zero_indegrees: int, upper_bound_16: float, upper_bound_17: float, indegree_variance: float, num_classes: int, new_names: map = {}):
+    def __init__(self, T: DummyLouds, A_prime: DummyWaveletTree, S_prime: DummyBitvector, num_of_trees: int, new_names: list):
         self.T = T
         self.A_prime= A_prime
         self.S_prime = S_prime
         self.new_names = new_names
         self.num_of_trees = num_of_trees
-        self.entropy_tuple = entropy_tuple
-        self.alpha_16 = alpha_16
-        self.non_zero_indegrees = non_zero_indegrees
-        self.upper_bound_16 = upper_bound_16
-        self.upper_bound_17 = upper_bound_17
-        self.indegree_variance = indegree_variance
-        self.num_classes = num_classes
+
 
     # for testing
     def print(self):
@@ -28,10 +22,7 @@ class UndirectedTrexGraph:
             print("A_prime : some wavelet tree with root: " + str(self.A_prime.root.B.bits))
             print("S_prime': " + str(self.S_prime.bits))
             print("Renamings: " + str(self.new_names))
-        print("Array based: " + str(self.entropy_tuple[0]) + ", Entropy with Wavelet Tree plus S but non reduced: " + str(self.entropy_tuple[1]) + ", Reduced: " + str(self.entropy_tuple[2]) + ", Planar: " + str(self.entropy_tuple[3]))
-        print("alpha: " + str(self.alpha))
-        print("normalized difference: " + str(self.normalized_difference))
-    
+      
     def degree(self, v: int) -> int:
         T_degree = self.T.degree(v)
         if v > self.num_of_trees:
@@ -137,10 +128,5 @@ class UndirectedTrexGraph:
         num_of_occ = self.A_prime.rank(pos_A_prime - 1, v)
         return T_degree + A_prime_outdegree + num_of_occ
 
-        
-    def entropy (self) -> tuple[float, float, float]:
-        return self.entropy_tuple
-    
-    
 
         
