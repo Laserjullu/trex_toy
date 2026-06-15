@@ -12,6 +12,10 @@ class DummyLouds(louds.AbstractLOUDS):
     # takes a the root of a tree (built with TreeNode) and builds the LOUDS Bitvector stored in self.B
 
     def __init__(self, roots: list[TreeNode]):
+        # in case of a simple Tree with only one root
+        if not isinstance(roots, list):
+            roots = [roots]
+            
         bits = [1] * len(roots)
         bits.append(0)
         current_level = roots

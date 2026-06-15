@@ -10,16 +10,16 @@ from tqdm import tqdm
 class Evaluator: 
 
     @staticmethod
-    def evaluate(G, G_minus_T, G_built, G_greedy = None, planar = False):
+    def evaluate(G, G_minus_T, G_built, G_greedy = None, planar = True):
         if isinstance(G, nx.DiGraph):
             type = "directed"
         elif isinstance(G, nx.Graph):
             type = "undirected"
         metrics = {"type": type, "n": G.number_of_nodes(), "m": G.number_of_edges(), "array entropy": None, "bitvector entropy": None, "bitvector random entropy": None, 
         "bitvector greedy entropy": None, "reduced entropy": None, "planar entropy": None, "avg cc": None, "alpha 1.6": None, "non zero indegree nodes": None, "upper bound 1.6": None, 
-        "upper bound 1.7": None, "indegree variance": None, "number of classes": None}
+        "upper bound 1.7": None, "indegree variance": None, "number of classes": None, "maximum class size": None, "planar edges": None}
         if isinstance(G, nx.DiGraph):
-            entropy_tuple, alpha_16, non_zero_indegrees, upper_bound_16, upper_bound_17, indegree_variance, num_classes = Evaluator.directed_metrics(G, G_minus_T)
+            entropy_tuple, alpha_16, non_zero_indegrees, upper_bound_16, upper_bound_17, indegree_variance, num_classes, maximum_class_size = Evaluator.directed_metrics(G, G_minus_T)
             metrics["array entropy"] = entropy_tuple[0]
             metrics["bitvector entropy"] = entropy_tuple[1]
             metrics["reduced entropy"] = entropy_tuple[2]
@@ -30,8 +30,9 @@ class Evaluator:
             metrics["upper bound 1.7"] = upper_bound_17
             metrics["indegree variance"] = indegree_variance
             metrics["number of classes"] = num_classes
+            metrics["maximum class size"] = maximum_class_size
         elif isinstance(G, nx.Graph):
-            entropy_tuple, alpha_16, non_zero_indegrees, upper_bound_16, upper_bound_17, indegree_variance, num_classes = Evaluator.undirected_metrics(G, G_minus_T, G_greedy)
+            entropy_tuple, alpha_16, non_zero_indegrees, upper_bound_16, upper_bound_17, indegree_variance, num_classes, maximum_class_size = Evaluator.undirected_metrics(G, G_minus_T, G_greedy)
             metrics["array entropy"] = entropy_tuple[0]
             metrics["bitvector entropy"] = entropy_tuple[1]
             metrics["bitvector random entropy"] = entropy_tuple[2]
@@ -44,8 +45,11 @@ class Evaluator:
             metrics["upper bound 1.7"] = upper_bound_17
             metrics["indegree variance"] = indegree_variance
             metrics["number of classes"] = num_classes
+            metrics["maximum class size"] = maximum_class_size
         if planar:
-            metrics["planar entropy"] = Evaluator.build_planar(G)
+            entropy_planar, planar_edges = Evaluator.build_planar(G)
+            metrics["planar entropy"] = entropy_planar
+            metrics["planar edges"] = planar_edges
         return metrics
 
     @staticmethod 
@@ -100,7 +104,10 @@ class Evaluator:
 
         start = time.time()
 
-        G_prime_density = density_greedy(G, 13)[0]
+        iterations = 1
+        if G.number_of_edges() < 1000000:
+            iterations = 13
+        G_prime_density = density_greedy(G, iterations)[0]
 
         G_density = G.number_of_edges() / G.number_of_nodes()
         alpha_16 = G_prime_density / G_density
@@ -128,14 +135,16 @@ class Evaluator:
         indegree_variance = np.var(indegrees) if len(indegrees) > 0 else 0.0
 
         twin_classes = {}
+        maximum_class_size = 0
         for v in G.nodes():
             neighbors = tuple(sorted(G.neighbors(v)))
             if neighbors not in twin_classes: 
+                maximum_class_size = max(maximum_class_size, len(neighbors))
                 twin_classes[neighbors] = []
                 twin_classes[neighbors].append(v)
         num_classes = len(twin_classes)
 
-        return entropy_tuple, alpha_16, non_zero_indegrees, upper_bound_16, upper_bound_17, indegree_variance, num_classes
+        return entropy_tuple, alpha_16, non_zero_indegrees, upper_bound_16, upper_bound_17, indegree_variance, num_classes, maximum_class_size
 
     @staticmethod
     def directed_metrics(G: nx.DiGraph, G_minus_T: nx.DiGraph):
@@ -184,7 +193,10 @@ class Evaluator:
         # choosing 13 Iterations, because in Boob et al's Paper it took 12.69 iterations to reach the optimum on avg. 
         print("beginning of Greedy alpha determination: ")
         start = time.time()
-        G_prime_density = density_greedy(G_multigraph, 13)[0]
+        iterations = 1
+        if G.number_of_edges() < 1000000:
+            iterations = 13
+        G_prime_density = density_greedy(G_multigraph, iterations)[0]
         del G_multigraph
 
         G_density = G.number_of_edges() / G.number_of_nodes()
@@ -216,11 +228,13 @@ class Evaluator:
 
         # number of theoretical twin classes 
         twin_classes = {}
+        maximum_class_size = 0
         for v in G.nodes():
             in_neighbors = tuple(sorted(G.predecessors(v)))
             out_neighbors = tuple(sorted(G.successors(v)))
             neighbors = (in_neighbors, out_neighbors)
             if neighbors not in twin_classes:
+                maximum_class_size = max(maximum_class_size, len(neighbors))
                 twin_classes[neighbors] = []
                 twin_classes[neighbors].append(v)
 
@@ -229,7 +243,7 @@ class Evaluator:
 
 
 
-        return entropy_tuple, alpha_16, non_zero_indegrees, upper_bound_16, upper_bound_17, indegree_variance, num_classes
+        return entropy_tuple, alpha_16, non_zero_indegrees, upper_bound_16, upper_bound_17, indegree_variance, num_classes, maximum_class_size
 
     @staticmethod
     def build_planar(G):
@@ -253,7 +267,7 @@ class Evaluator:
             planar_entropy += 2.092 * G.number_of_nodes() + len(planar_edges) + math.log2(math.comb(m_dash + G_prime.number_of_nodes(), G_prime.number_of_nodes()))
 
         
-            return planar_entropy
+            return planar_entropy, len(planar_edges)
 
         elif isinstance(G, nx.Graph):
             G_prime = nx.DiGraph()
@@ -279,7 +293,7 @@ class Evaluator:
             # 2.5 because we leave out the edges for the direction bitvector.
             planar_entropy += 2.092 * G.number_of_nodes() + math.log2(math.comb(m_dash + G_prime.number_of_nodes(), G_prime.number_of_nodes()))
 
-            return planar_entropy
+            return planar_entropy, len(planar_edges)
 
     @staticmethod
     def extract_planar_edges(G_undirected: nx.Graph, G_prime: nx.DiGraph, G_original: nx.DiGraph = None):
