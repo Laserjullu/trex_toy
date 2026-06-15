@@ -17,9 +17,9 @@ class Evaluator:
             type = "undirected"
         metrics = {"type": type, "n": G.number_of_nodes(), "m": G.number_of_edges(), "array entropy": None, "bitvector entropy": None, "bitvector random entropy": None, 
         "bitvector greedy entropy": None, "reduced entropy": None, "planar entropy": None, "avg cc": None, "alpha 1.6": None, "non zero indegree nodes": None, "upper bound 1.6": None, 
-        "upper bound 1.7": None, "indegree variance": None, "number of classes": None, "maximum class size": None, "planar edges": None}
+        "upper bound 1.7": None, "indegree coefficient of variation": None, "number of classes": None, "maximum class degree": None, "planar edges": None}
         if isinstance(G, nx.DiGraph):
-            entropy_tuple, alpha_16, non_zero_indegrees, upper_bound_16, upper_bound_17, indegree_variance, num_classes, maximum_class_size = Evaluator.directed_metrics(G, G_minus_T)
+            entropy_tuple, alpha_16, non_zero_indegrees, upper_bound_16, upper_bound_17, indegree_cv, num_classes, maximum_class_degree = Evaluator.directed_metrics(G, G_minus_T)
             metrics["array entropy"] = entropy_tuple[0]
             metrics["bitvector entropy"] = entropy_tuple[1]
             metrics["reduced entropy"] = entropy_tuple[2]
@@ -28,11 +28,11 @@ class Evaluator:
             metrics["non zero indegree nodes"] = non_zero_indegrees
             metrics["upper bound 1.6"] = upper_bound_16
             metrics["upper bound 1.7"] = upper_bound_17
-            metrics["indegree variance"] = indegree_variance
+            metrics["indegree variance"] = indegree_cv
             metrics["number of classes"] = num_classes
-            metrics["maximum class size"] = maximum_class_size
+            metrics["maximum class degree"] = maximum_class_degree
         elif isinstance(G, nx.Graph):
-            entropy_tuple, alpha_16, non_zero_indegrees, upper_bound_16, upper_bound_17, indegree_variance, num_classes, maximum_class_size = Evaluator.undirected_metrics(G, G_minus_T, G_greedy)
+            entropy_tuple, alpha_16, non_zero_indegrees, upper_bound_16, upper_bound_17, indegree_cv, num_classes, maximum_class_degree = Evaluator.undirected_metrics(G, G_minus_T, G_greedy)
             metrics["array entropy"] = entropy_tuple[0]
             metrics["bitvector entropy"] = entropy_tuple[1]
             metrics["bitvector random entropy"] = entropy_tuple[2]
@@ -43,9 +43,9 @@ class Evaluator:
             metrics["non zero indegree nodes"] = non_zero_indegrees
             metrics["upper bound 1.6"] = upper_bound_16
             metrics["upper bound 1.7"] = upper_bound_17
-            metrics["indegree variance"] = indegree_variance
+            metrics["indegree variance"] = indegree_cv
             metrics["number of classes"] = num_classes
-            metrics["maximum class size"] = maximum_class_size
+            metrics["maximum class degree"] = maximum_class_degree
         if planar:
             entropy_planar, planar_edges = Evaluator.build_planar(G)
             metrics["planar entropy"] = entropy_planar
@@ -116,10 +116,10 @@ class Evaluator:
         H_indegree = 0
         if m > 0: 
             # we take the the greedy approach to compare with the bound 
-            H_indegree_entropy_per_edge = (entropy_tuple[3] - math.log2(math.comb(m+n, n)))/m
+            H_indegree = (entropy_tuple[3] - math.log2(math.comb(m+n, n)))/m
 
-        H_indegree_entropy = H_indegree * m 
-        upper_bound_16 = H_indegree_entropy - ((n)/(2 * alpha_16)) * H_indegree_entropy_per_edge + (2* n)/math.log(2)
+        H_indegree_total = H_indegree * m 
+        upper_bound_16 = H_indegree_total - ((n)/(2 * alpha_16)) * H_indegree + (2* n)/math.log(2)
 
         non_zero_indegrees = 0
         for v in G_greedy.nodes():
@@ -127,24 +127,25 @@ class Evaluator:
                 non_zero_indegrees += 1
         
         alpha_17 = n/non_zero_indegrees
-        upper_bound_17 = H_indegree_entropy - ((n)/(2 * alpha_17)) * H_indegree + (2* n)/math.log(2)
+        upper_bound_17 = H_indegree_total - ((n)/(2 * alpha_17)) * H_indegree + (2* n)/math.log(2)
 
         indegrees = []
         for v in G_greedy.nodes():
             indegrees.append(G_greedy.in_degree(v))
-        indegree_variance = np.var(indegrees) if len(indegrees) > 0 else 0.0
+        indegree_CV = np.var(indegrees)/np.mean(indegrees) if len(indegrees) > 0 else 0.0
 
         twin_classes = {}
-        maximum_class_size = 0
+        maximum_class_degree = 0
         for v in G.nodes():
             neighbors = tuple(sorted(G.neighbors(v)))
             if neighbors not in twin_classes: 
-                maximum_class_size = max(maximum_class_size, len(neighbors))
                 twin_classes[neighbors] = []
                 twin_classes[neighbors].append(v)
+            else:
+                maximum_class_degree = max(maximum_class_degree, len(neighbors))
         num_classes = len(twin_classes)
 
-        return entropy_tuple, alpha_16, non_zero_indegrees, upper_bound_16, upper_bound_17, indegree_variance, num_classes, maximum_class_size
+        return entropy_tuple, alpha_16, non_zero_indegrees, upper_bound_16, upper_bound_17, indegree_CV, num_classes, maximum_class_degree
 
     @staticmethod
     def directed_metrics(G: nx.DiGraph, G_minus_T: nx.DiGraph):
@@ -210,8 +211,8 @@ class Evaluator:
             H_indegree = (entropy_tuple[1] - math.log2(math.comb(m+n,n)))/m
         
 
-        H_indegree_entropy = H_indegree * m 
-        upper_bound_16 = H_indegree_entropy - ((n)/(2 * alpha_16)) * H_indegree + (2* n)/math.log(2)
+        H_indegree_total = H_indegree * m 
+        upper_bound_16 = H_indegree_total - ((n)/(2 * alpha_16)) * H_indegree + (2* n)/math.log(2)
 
         non_zero_indegrees = 0
         for v in G.nodes():
@@ -219,31 +220,34 @@ class Evaluator:
                 non_zero_indegrees += 1
         
         alpha_17 = n /non_zero_indegrees
-        upper_bound_17 = H_indegree_entropy - ((n)/(2 * alpha_17)) * H_indegree + (2* n)/math.log(2)
+        upper_bound_17 = H_indegree_total - ((n)/(2 * alpha_17)) * H_indegree + (2* n)/math.log(2)
 
         indegrees = []
         for v in G.nodes(): 
             indegrees.append(G.in_degree(v))
-        indegree_variance = np.var(indegrees)
+        indegree_cv = np.var(indegrees)
 
         # number of theoretical twin classes 
         twin_classes = {}
-        maximum_class_size = 0
+        maximum_class_degree = 0
         for v in G.nodes():
             in_neighbors = tuple(sorted(G.predecessors(v)))
             out_neighbors = tuple(sorted(G.successors(v)))
             neighbors = (in_neighbors, out_neighbors)
             if neighbors not in twin_classes:
-                maximum_class_size = max(maximum_class_size, len(neighbors))
                 twin_classes[neighbors] = []
                 twin_classes[neighbors].append(v)
+            else:
+                maximum_class_degree = max(maximum_class_degree, len(in_neighbors) + len(out_neighbors))
+                twin_classes[neighbors].append(v)
+            
 
         num_classes = len(twin_classes)
         
 
 
 
-        return entropy_tuple, alpha_16, non_zero_indegrees, upper_bound_16, upper_bound_17, indegree_variance, num_classes, maximum_class_size
+        return entropy_tuple, alpha_16, non_zero_indegrees, upper_bound_16, upper_bound_17, indegree_cv, num_classes, maximum_class_degree
 
     @staticmethod
     def build_planar(G):
@@ -387,5 +391,3 @@ class Evaluator:
         return planar_edges, G_prime
 
             
-
-

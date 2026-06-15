@@ -26,28 +26,44 @@ def trex_on_directory(directory: str, output_path = "trex_results.csv", undirect
             G = nx.read_edgelist(path, create_using=nx.Graph(), comments = '#')
             start = time.time()
             G_built, G_minus_T, G_greedy = builder.build(G)
-            print("Time taken for Trex Building: " + str(time.time() - start))
+            trex_time = time.time() - start
 
             start = time.time()
             metrics = Evaluator.evaluate(G, G_minus_T, G_built, G_greedy, planar=True)
-            print("Time taken for Evaluation: " + str(time.time() - start))
+            evaluation_time = time.time() - start
             metrics["Dataset"] = filename
+            metrics["trex vs bitvector (greedy) (%)"] = 1 - metrics["reduced entropy"] / metrics["bitvector greedy entropy"] * 100
+            metrics["trex time"] = trex_time
+            metrics["evaluation time"] = evaluation_time
             results_as_dict.append(metrics)
             print(metrics)
         else:
             G = nx.read_edgelist(path, create_using=nx.DiGraph(), comments = '#')
             start = time.time()
             G_built, G_minus_T = builder.build(G)
-            print("Time taken for Trex Building: " + str(time.time() - start))
+            trex_time = time.time() - start
 
             start = time.time()
             metrics = Evaluator.evaluate(G, G_minus_T, G_built, planar=True)
-            print("Time taken for Evaluation: " + str(time.time() - start))
+            evaluation_time = time.time() - start
             metrics["Dataset"] = filename
+            metrics["trex vs bitvector (greedy) (%)"] = 1 - metrics["reduced entropy"] / metrics["bitvector entropy"] * 100
+            metrics["trex time"] = trex_time
+            metrics["evaluation time"] = evaluation_time
             results_as_dict.append(metrics)
             print(metrics)
 
+        
     df = pd.DataFrame(results_as_dict)
+    # some more derived metrics:
+    df["trex vs array (%)"] = 1 - df["reduced entropy"] / df["array entropy"] * 100
+    df["planar vs trex (%)"] = 1- df["planar entropy"] / df["reduced entropy"] * 100
+    df["trex bpe"] = df["reduced entropy"] / df["number of edges"]
+    df["planar bpe"] = df["planar entropy"] / df["number of edges"]
+    df["planar edges vs maximum"] = 100 * df["planar edges"]/(df["number of nodes"] * 1.5)
+    
+
+    
     df.to_csv(output_path)
     print(results_as_dict)
     return df
