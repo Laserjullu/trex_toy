@@ -110,7 +110,7 @@ class Evaluator:
         indegrees = []
         for v in G_greedy.nodes():
             indegrees.append(G_greedy.in_degree(v))
-        indegree_CV = np.var(indegrees)/np.mean(indegrees)
+        indegree_CV = np.std(indegrees)/np.mean(indegrees)
 
         twin_classes = {}
         maximum_class_degree = 0
@@ -219,7 +219,7 @@ class Evaluator:
         indegrees = []
         for v in G.nodes(): 
             indegrees.append(G.in_degree(v))
-        indegree_CV = np.var(indegrees)/np.mean(indegrees)
+        indegree_CV = np.std(indegrees)/np.mean(indegrees)
 
         # number of theoretical twin classes 
         twin_classes = {}

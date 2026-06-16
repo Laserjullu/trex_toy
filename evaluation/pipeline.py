@@ -9,6 +9,7 @@ import time
 from tqdm import tqdm
 import argparse
 import numpy as np
+from tabulate import tabulate
 
 # only reads edgelists in format source target
 def trex_on_directory(directory: str, output_path = "trex_results.csv", undirected = False):
@@ -33,7 +34,7 @@ def trex_on_directory(directory: str, output_path = "trex_results.csv", undirect
             metrics = Evaluator.evaluate(G, G_minus_T, G_built, G_greedy, planar=True)
             evaluation_time = time.time() - start
             metrics["Dataset"] = filename
-            metrics["trex vs bitvector (greedy) (%)"] = 1 - metrics["total bits trex"] / metrics["bitvector greedy total bits"] * 100
+            metrics["trex vs bitvector (greedy) (%)"] = (1 - metrics["total bits trex"] / metrics["bitvector greedy total bits"]) * 100
             metrics["trex time"] = trex_time
             metrics["evaluation time"] = evaluation_time
             results_as_dict.append(metrics)
@@ -48,25 +49,29 @@ def trex_on_directory(directory: str, output_path = "trex_results.csv", undirect
             metrics = Evaluator.evaluate(G, G_minus_T, G_built, planar=True)
             evaluation_time = time.time() - start
             metrics["Dataset"] = filename
-            metrics["trex vs bitvector (greedy) (%)"] = 1 - metrics["total bits trex"] / metrics["bitvector total bits"] * 100
+            metrics["trex vs bitvector (greedy) (%)"] = (1 - metrics["total bits trex"] / metrics["bitvector total bits"]) * 100
             metrics["trex time"] = trex_time
             metrics["evaluation time"] = evaluation_time
             results_as_dict.append(metrics)
-            print(metrics)
-
+        print(metrics)
         
     df = pd.DataFrame(results_as_dict)
     # some more derived metrics:
-    df["trex vs array (%)"] = 1 - df["total bits trex"] / df["array total bits"] * 100
-    df["planar vs trex (%)"] = 1- df["total bits planar"] / df["total bits trex"] * 100
+    df["trex vs array (%)"] = (1 - df["total bits trex"] / df["array total bits"]) * 100
+    df["planar vs trex (%)"] = (1 - df["total bits planar"] / df["total bits trex"]) * 100
     df["trex bpe"] = df["total bits trex"] / df["m"]
     df["planar bpe"] = df["total bits planar"] / df["m"]
     df["planar edges vs maximum"] = 100 * df["planar edges"]/(np.floor(df["n"] * 1.5 - 1.5))
-    
 
-    
+    df["bound 1.6 vs trex"] = df["upper bound 1.6"] - df["trex entropy"]
+    df["normalized bound 1.6 difference"] = df["bound 1.6 vs trex"] / (df["n"] * np.log2(df["n"]))
+
+    df["bound 1.7 vs trex"] = df["upper bound 1.7"] - df["trex entropy"]
+    df["normalized bound 1.7 difference"] = df["bound 1.7 vs trex"] / (df["n"] * np.log2(df["n"]))
+
+    df["alpha 1.7"] = df["n"]/df["non zero indegree nodes"]
+    df["density"] = df["m"]/df["n"]
     df.to_csv(output_path)
-    print(results_as_dict)
     return df
 
 
@@ -82,7 +87,11 @@ if __name__ == "__main__":
         df = trex_on_directory(args.directory, undirected = False)
 
     if args.undirected:
-        plot = df.plot.bar(x = "Dataset", y = ["array total bits", "bitvector total bits", "bitvector random total bits", "bitvector greedy total bits", "total bits trex", "total bits planar"])
+        df.plot.bar(x = "Dataset", y = ["array total bits", "bitvector total bits", "bitvector random total bits", "bitvector greedy total bits", "total bits trex", "total bits planar"])
     else:
-        plot = df.plot.bar(x = "Dataset", y = ["array total bits", "bitvector total bits", "total bits trex", "total bits planar"])
+        df.plot.bar(x = "Dataset", y = ["array total bits", "bitvector total bits", "total bits trex", "total bits planar"])
+
+    df.plot.scatter(x = "alpha 1.6", y = "normalized bound 1.6 difference")
+    df.plot.scatter(x = "alpha 1.7", y = "normalized bound 1.7 difference")
+    print(df.to_latex())
     plt.show()
