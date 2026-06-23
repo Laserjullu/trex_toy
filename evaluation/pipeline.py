@@ -9,7 +9,6 @@ import time
 from tqdm import tqdm
 import argparse
 import numpy as np
-from tabulate import tabulate
 
 # only reads edgelists in format source target
 def trex_on_directory(directory: str, output_path = "trex_results.csv", undirected = False):
@@ -71,7 +70,7 @@ def trex_on_directory(directory: str, output_path = "trex_results.csv", undirect
 
     df["alpha 1.7"] = df["n"]/df["non zero indegree nodes"]
     df["density"] = df["m"]/df["n"]
-    df.to_csv(output_path)
+    df.to_csv(output_path, sep = ';', decimal = ',')
     return df
 
 
