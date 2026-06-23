@@ -54,8 +54,8 @@ class Evaluator:
         for v in G.nodes():
             degree = G.degree(v)
             if degree > 0:
-                G_entropy_bitvector += degree * math.log2(m/degree)
-        G_entropy_bitvector += math.log2(math.comb(m + n, n))
+                G_entropy_bitvector += degree * math.log2((2*m)/degree)
+        G_entropy_bitvector += math.log2(math.comb((2*m) + n, n))
         
         G_random = G.to_directed()
         for u, v in G.edges():

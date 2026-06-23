@@ -19,7 +19,7 @@ def density_greedy(G, iterations):
     best_density = 0.0  # Highest density encountered.
     best_subgraph = set()  # Nodes of the best subgraph found.
 
-    for _ in tqdm(range(iterations)):
+    for _ in range(iterations):
         # Initialize heap for fast access to minimum weighted degree.
         heap = nx.utils.BinaryHeap()
 
@@ -33,6 +33,8 @@ def density_greedy(G, iterations):
         pbar = tqdm(total=len(remaining_nodes))
         while remaining_nodes:
             num_nodes = len(remaining_nodes)
+
+            # important progress bar for large graphs
             if num_nodes % 1000 == 0:
                 pbar.update(1000)
             
