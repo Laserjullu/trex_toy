@@ -61,6 +61,8 @@ class Evaluator:
         for u, v in G.edges():
             if u < v: 
                 G_random.remove_edge(u,v)
+            else: 
+                G_random.remove_edge(v,u)
         
         for v in G_random.nodes():
             indegree = G_random.in_degree(v)
