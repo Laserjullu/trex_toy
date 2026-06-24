@@ -44,8 +44,8 @@ class DummyLouds(louds.AbstractLOUDS):
     # then just add i to get the name of the child. 
     def child(self, v: int, i: int) -> int:
         nodes_before = self.B.rank(self.B.select(v, 0), 1)
-        # check if we are looking for a child, that does not exist, maybe mostly unecessary 
-        #if self.B.rank(self.B.select(v,0), 1) - self.B.rank(self.B.select(v, 0) + i, 1) != 0:
+        # if needed, check if we are looking for a child, that does not exist, mostly unnecessary 
+        # if self.B.rank(self.B.select(v,0), 1) - self.B.rank(self.B.select(v, 0) + i, 1) != 0:
         #    print(str(v) + " does not have " + str(i) + " children within the Tree")
         #    return -1
         return nodes_before + i

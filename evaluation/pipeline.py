@@ -78,19 +78,23 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("directory")
     parser.add_argument("--undirected", action = "store_true")
+    parser.add_argument("--output")
 
     args = parser.parse_args()
     if args.undirected:
-        df = trex_on_directory(args.directory, undirected = True)
+        if args.output:
+            df = trex_on_directory(args.directory, undirected = True, output_path = args.output)
+        else: 
+            df = trex_on_directory(args.directory, undirected = True)
     else:
-        df = trex_on_directory(args.directory, undirected = False)
-
+        if args.output:
+            df = trex_on_directory(args.directory, undirected = False, output_path = args.output)
+        else: 
+            df = trex_on_directory(args.directory, undirected = False)
     if args.undirected:
         df.plot.bar(x = "Dataset", y = ["array total bits", "bitvector total bits", "bitvector random total bits", "bitvector greedy total bits", "total bits trex", "total bits planar"])
     else:
         df.plot.bar(x = "Dataset", y = ["array total bits", "bitvector total bits", "total bits trex", "total bits planar"])
-
-    df.plot.scatter(x = "alpha 1.6", y = "normalized bound 1.6 difference")
-    df.plot.scatter(x = "alpha 1.7", y = "normalized bound 1.7 difference")
+        
     print(df.to_latex())
     plt.show()
