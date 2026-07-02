@@ -92,7 +92,7 @@ if __name__ == "__main__":
         else: 
             df = trex_on_directory(args.directory, undirected = False)
     if args.undirected:
-        df.plot.bar(x = "Dataset", y = ["array total bits", "bitvector total bits", "bitvector random total bits", "bitvector greedy total bits", "total bits trex", "total bits planar"])
+        df.plot.bar(x = "Dataset", y = ["array total bits", "bitvector total bits", "bitvector worst case total bits", "bitvector random total bits", "bitvector system total bits", "bitvector greedy total bits", "total bits trex", "total bits planar"])
     else:
         df.plot.bar(x = "Dataset", y = ["array total bits", "bitvector total bits", "total bits trex", "total bits planar"])
         

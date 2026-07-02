@@ -6,6 +6,7 @@ import time
 from src.functions.density import density_greedy
 from networkx.utils import UnionFind
 from tqdm import tqdm
+import random
 
 class Evaluator: 
 
@@ -35,7 +36,9 @@ class Evaluator:
         # entropy calculation 
         m = G.number_of_edges()
         G_entropy_bitvector_greedy = 0
+        G_entropy_bitvector_system = 0
         G_entropy_bitvector_random = 0
+        G_entropy_bitvector_worst_case = 0
         G_entropy_bitvector = 0
         n  = len(G.nodes())
         if m == 0:
@@ -57,19 +60,45 @@ class Evaluator:
                 G_entropy_bitvector += degree * math.log2((2*m)/degree)
         G_entropy_bitvector += math.log2(math.comb((2*m) + n, n))
         
-        G_random = G.to_directed()
+        G_system = G.to_directed()
         for u, v in G.edges():
             if u < v: 
-                G_random.remove_edge(u,v)
+                G_system.remove_edge(u,v)
             else: 
-                G_random.remove_edge(v,u)
+                G_system.remove_edge(v,u)
         
+        for v in G_system.nodes():
+            indegree = G_system.in_degree(v)
+            if indegree > 0:
+                G_entropy_bitvector_system += indegree * math.log2(m/indegree)
+        G_entropy_bitvector_system += math.log2(math.comb(m + n, n))        
+        
+        #truly independent random choice for only storing a single edge
+        G_random = G.to_directed()
+        for u, v in G.edges():
+            if random.random() > 0.5:
+                G_random.remove_edge (v, u)
+            else: 
+                G_random.remove_edge(u, v)
+
         for v in G_random.nodes():
-            indegree = G_random.in_degree(v)
+            indegree = G_system.in_degree(v)
             if indegree > 0:
                 G_entropy_bitvector_random += indegree * math.log2(m/indegree)
-        G_entropy_bitvector_random += math.log2(math.comb(m + n, n))        
+        G_entropy_bitvector_random += math.log2(math.comb(m + n, n))   
+
+
+        G_worst_case = G.to_directed()
+        for u,v in G_greedy.edges():
+            G_worst_case.remove_edge(u,v)
         
+        for v in G_random.nodes():
+            indegree = G_worst_case.in_degree(v)
+            if indegree > 0:
+                G_entropy_bitvector_worst_case += indegree * math.log2(m/indegree)
+        G_entropy_bitvector_worst_case += math.log2(math.comb(m + n, n))
+
+
         trex_total = 0
         reduced_indegree_entropy = 0
         m_dash = G_minus_T.number_of_edges()
@@ -80,7 +109,7 @@ class Evaluator:
         trex_entropy = reduced_indegree_entropy
         trex_total += reduced_indegree_entropy + 2* G_minus_T.number_of_nodes() + math.log2(math.comb(m_dash + G_minus_T.number_of_nodes(), G_minus_T.number_of_nodes()))
 
-        entropy_tuple = [G_array_entropy, G_entropy_bitvector, G_entropy_bitvector_random, G_entropy_bitvector_greedy, trex_total, -1]
+        entropy_tuple = [G_array_entropy, G_entropy_bitvector, G_entropy_bitvector_system, G_entropy_bitvector_greedy, trex_total, -1]
 
         start = time.time()
 
@@ -128,8 +157,10 @@ class Evaluator:
         return{
             "array total bits": G_array_entropy,
             "bitvector total bits": G_entropy_bitvector,
-            "bitvector random total bits": G_entropy_bitvector_random, 
+            "bitvector system total bits": G_entropy_bitvector_system, 
             "bitvector greedy total bits": G_entropy_bitvector_greedy,
+            "bitvector worst case total bits": G_entropy_bitvector_worst_case,
+            "bitvector random total bits": G_entropy_bitvector_random, 
             "total bits trex": trex_total, 
             "trex entropy": trex_entropy,
             "alpha 1.6": alpha_16,
@@ -245,8 +276,10 @@ class Evaluator:
         return{
             "array total bits": G_array_entropy,
             "bitvector total bits": G_entropy_bitvector,
-            "bitvector random total bits": -1, 
+            "bitvector system total bits": -1, 
+            "bitvector random total bits": -1,
             "bitvector greedy total bits": -1,
+            "bitvector worst case total bits": -1,
             "total bits trex": trex_total, 
             "trex entropy": trex_entropy,
             "alpha 1.6": alpha_16,
