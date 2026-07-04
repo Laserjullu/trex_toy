@@ -82,7 +82,7 @@ class Evaluator:
                 G_random.remove_edge(u, v)
 
         for v in G_random.nodes():
-            indegree = G_system.in_degree(v)
+            indegree = G_random.in_degree(v)
             if indegree > 0:
                 G_entropy_bitvector_random += indegree * math.log2(m/indegree)
         G_entropy_bitvector_random += math.log2(math.comb(m + n, n))   
@@ -92,7 +92,7 @@ class Evaluator:
         for u,v in G_greedy.edges():
             G_worst_case.remove_edge(u,v)
         
-        for v in G_random.nodes():
+        for v in G_worst_case.nodes():
             indegree = G_worst_case.in_degree(v)
             if indegree > 0:
                 G_entropy_bitvector_worst_case += indegree * math.log2(m/indegree)

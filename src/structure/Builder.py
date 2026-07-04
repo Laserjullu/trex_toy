@@ -29,9 +29,7 @@ class Builder:
     def build_directed(self, G: nx.DiGraph) -> DirectedTrexGraph:
         
         # we determine the weights by taking the lower indegree of both target vertices, if existing.
-        print("making it undirected" + str(time.time()))
         G_undirected = G.to_undirected()
-        print("finished the undirected version" + str(time.time()))
         for u, v in G.edges():
             weight = G.in_degree(v)
             if G.has_edge(v, u):
@@ -82,7 +80,14 @@ class Builder:
                 nodes[child] = TreeNode()
                 nodes[parent].children.append(nodes[child])
                 
-                if G.has_edge(parent, child):
+
+                if G.has_edge(parent, child) and G.has_edge(child, parent):
+                    if G.in_degree(child) <= G.in_degree(parent):
+                        D[i-1] = 1
+                        G_minus_T.remove_edge(parent, child)
+                    else:
+                        G_minus_T.remove_edge(child,parent)
+                elif G.has_edge(parent, child):
                     D[i - 1] = 1
                     G_minus_T.remove_edge(parent, child)
                 else: 
@@ -204,6 +209,3 @@ class Builder:
         
         return UndirectedTrexGraph(T, A_prime, S_prime, len(roots), sorted(new_names.items())), G_minus_T, G_greedy
     
-
-
-
