@@ -116,7 +116,9 @@ class Evaluator:
         iterations = 1
         if G.number_of_edges() < 1000000:
             iterations = 13
-        G_prime_density = density_greedy(G, iterations)[0]
+        #temporary
+        #G_prime_density = density_greedy(G, iterations)[0]
+        G_prime_density = -1
 
         G_density = G.number_of_edges() / G.number_of_nodes()
         alpha_16 = G_prime_density / G_density
@@ -224,7 +226,9 @@ class Evaluator:
         iterations = 1
         if G.number_of_edges() < 1000000:
             iterations = 13
-        G_prime_density = density_greedy(G_multigraph, iterations)[0]
+        #G_prime_density = density_greedy(G_multigraph, iterations)[0]
+        #temporary
+        G_prime_density = -1
         del G_multigraph
 
         G_density = G.number_of_edges() / G.number_of_nodes()
