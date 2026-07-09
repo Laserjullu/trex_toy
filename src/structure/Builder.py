@@ -10,6 +10,7 @@ from networkx.utils import UnionFind
 from tqdm import tqdm
 import time
 import numpy as np
+import random
 
 
 class Builder:
@@ -48,7 +49,8 @@ class Builder:
         for component in tqdm(components, total = len(components)):
 
             subgraph = G_undirected.subgraph(component)
-            Tree = nx.minimum_spanning_tree(subgraph)
+            #Tree = nx.minimum_spanning_tree(subgraph)
+            Tree = self.random_spanning_tree(subgraph)
             # arbitrary root choice for each weak component
             roots.append(list(Tree.nodes())[0])
             forest.add_edges_from(Tree.edges())
@@ -154,7 +156,8 @@ class Builder:
         for component in nx.connected_components(G_mst):
 
             subgraph = G_mst.subgraph(component)
-            Tree = nx.minimum_spanning_tree(subgraph)
+            #Tree = nx.minimum_spanning_tree(subgraph)
+            Tree = self.random_spanning_tree(subgraph)
             roots.append(list(Tree.nodes())[0])
             forest.add_edges_from(Tree.edges())
 
@@ -209,3 +212,7 @@ class Builder:
         
         return UndirectedTrexGraph(T, A_prime, S_prime, len(roots), sorted(new_names.items())), G_minus_T, G_greedy
     
+    def random_spanning_tree(self, G: nx.Graph) -> nx.Graph:
+        for (u,v) in G.edges():
+            G[u][v]['weight'] = random.random()
+        return nx.minimum_spanning_tree(G)
