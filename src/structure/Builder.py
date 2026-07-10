@@ -34,7 +34,9 @@ class Builder:
         for u, v in G.edges():
             weight = G.in_degree(v)
             if G.has_edge(v, u):
-                weight = min(G.in_degree(u), weight)
+                #weight = min(G.in_degree(u), weight)
+                #temporal
+                weight = max(G.in_degree(u), weight)
             G_undirected[u][v]['weight'] = weight
 
         # we create a new Graph in which we later remove all the edges, such that we still have the original graph stored. 
@@ -50,7 +52,9 @@ class Builder:
 
             subgraph = G_undirected.subgraph(component)
             #Tree = nx.minimum_spanning_tree(subgraph)
-            Tree = self.random_spanning_tree(subgraph)
+            Tree = nx.maximum_spanning_tree(subgraph)
+            #temporary
+            #Tree = self.random_spanning_tree(subgraph)
             # arbitrary root choice for each weak component
             roots.append(list(Tree.nodes())[0])
             forest.add_edges_from(Tree.edges())
@@ -84,11 +88,22 @@ class Builder:
                 
 
                 if G.has_edge(parent, child) and G.has_edge(child, parent):
-                    if G.in_degree(child) <= G.in_degree(parent):
-                        D[i-1] = 1
-                        G_minus_T.remove_edge(parent, child)
-                    else:
-                        G_minus_T.remove_edge(child,parent)
+                    # if G.in_degree(child) <= G.in_degree(parent):
+                    #     D[i-1] = 1
+                    #     G_minus_T.remove_edge(parent, child)
+                    # else:
+                    #     G_minus_T.remove_edge(child,parent)
+                    #temporal
+                     if G.in_degree(child) > G.in_degree(parent):
+                         D[i-1] = 1
+                         G_minus_T.remove_edge(parent, child)
+                     else:
+                         G_minus_T.remove_edge(child,parent)
+                    # if random.random() < 0.5:
+                    #     D[i-1] = 1
+                    #     G_minus_T.remove_edge(parent, child)
+                    # else:
+                    #     G_minus_T.remove_edge(child,parent)
                 elif G.has_edge(parent, child):
                     D[i - 1] = 1
                     G_minus_T.remove_edge(parent, child)
@@ -157,7 +172,9 @@ class Builder:
 
             subgraph = G_mst.subgraph(component)
             #Tree = nx.minimum_spanning_tree(subgraph)
-            Tree = self.random_spanning_tree(subgraph)
+            #temporary
+            Tree = nx.maximum_spanning_tree(subgraph)
+            #Tree = self.random_spanning_tree(subgraph)
             roots.append(list(Tree.nodes())[0])
             forest.add_edges_from(Tree.edges())
 
