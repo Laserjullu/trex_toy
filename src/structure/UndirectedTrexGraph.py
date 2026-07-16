@@ -7,12 +7,11 @@ from src.dummy.dummy_bitvector import DummyBitvector
 
 class UndirectedTrexGraph:
 
-    def __init__(self, T: DummyLouds, A_prime: DummyWaveletTree, S_prime: DummyBitvector, num_of_trees: int, new_names: list):
+    def __init__(self, T: DummyLouds, A_prime: DummyWaveletTree, S_prime: DummyBitvector, new_names: list):
         self.T = T
         self.A_prime= A_prime
         self.S_prime = S_prime
         self.new_names = new_names
-        self.num_of_trees = num_of_trees
 
 
     # for testing
@@ -25,7 +24,7 @@ class UndirectedTrexGraph:
       
     def degree(self, v: int) -> int:
         T_degree = self.T.degree(v)
-        if v > self.num_of_trees:
+        if self.T.parent(v) != 0:
             T_degree += 1
         s = self.S_prime.select(v, 1)
         s_dash = self.S_prime.select(v + 1,1)
@@ -55,11 +54,11 @@ class UndirectedTrexGraph:
         T_degree = self.T.degree(v)
 
         # check whether we are simply asking for the parent 
-        if i == 1 and v > self.num_of_trees:
+        if i == 1 and self.T.parent(v) != 0:
             return self.T.parent(v)
 
         # increase the degree if v has a parent within the tree, decrease the neighbor id we are looking for by one
-        if v > self.num_of_trees:
+        if self.T.parent(v) != 0:
             j -= 1
             T_degree += 1
         # now we look within the Tree neighbors
@@ -98,7 +97,7 @@ class UndirectedTrexGraph:
         
         # checking if w is v's parent and adjusting T_degree
         T_degree = self.T.degree(v)
-        if v > self.num_of_trees:
+        if self.T.parent(v) != 0:
             T_degree += 1
             if self.T.parent(v) == w:
                 return 1
@@ -106,7 +105,7 @@ class UndirectedTrexGraph:
         # checking if w is one of v's children
         if self.T.parent(w) == v:
             T_rank = self.T.child_rank(w)
-            if v > self.num_of_trees:
+            if self.T.parent(v) != 0:
                 T_rank += 1
             return T_rank
         
@@ -130,3 +129,4 @@ class UndirectedTrexGraph:
 
 
         
+    

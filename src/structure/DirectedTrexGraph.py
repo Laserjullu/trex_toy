@@ -8,14 +8,14 @@ from src.dummy.dummy_bitvector import DummyBitvector
 class DirectedTrexGraph:
 
     # new_names are only given if n < a certain threshhold (atm 50), also wrong type hint at the moment, but I guess that's fine 
-    def __init__(self, T: DummyLouds, A_prime: DummyWaveletTree, S_prime: DummyBitvector, D: DummyBitvector, num_of_trees: int,  new_names: list):
+    def __init__(self, T: DummyLouds, A_prime: DummyWaveletTree, S_prime: DummyBitvector, D: DummyBitvector,  new_names: list):
         self.T = T
         self.A_prime= A_prime
         self.S_prime = S_prime
         self.D = D
         self.new_names = new_names
-        # this can also be done by using constant time self.T.parent(v) != 0, but i preferred this option for a tiny bit more speed.
-        self.num_of_trees = num_of_trees
+        # self.num_of_trees = num_of_trees
+        # can be exchanged for self.T.parent(v) != 0 checks and slightly faster query times 
 
     # for testing
     def print(self):
@@ -30,7 +30,7 @@ class DirectedTrexGraph:
         outgoing_A_prime = self.S_prime.select(v + 1, 1) - self.S_prime.select(v,1) - 1
         outgoing_T = 0
         # we check if theres an edge pointing upwards
-        if self.D.access(v - 1) == 0 and v > self.num_of_trees:
+        if self.D.access(v - 1) == 0 and self.T.parent(v) != 0:
             outgoing_T +=1
         
         # we check how many edges point downwards to the children, meaning we count the ones in the interval, where the children are mentioned in D
@@ -50,7 +50,7 @@ class DirectedTrexGraph:
 
         ingoing_T = 0
 
-        if self.D.access(v-1) == 1 and v > self.num_of_trees:
+        if self.D.access(v-1) == 1 and self.T.parent(v) != 0:
             ingoing_T += 1
         
         if self.T.degree(v) != 0:
@@ -85,7 +85,7 @@ class DirectedTrexGraph:
 
         # we calculate the outdegree of v in T by simply first checking the node to the parent and then count the number of children with a 1 in D
         T_outdegree = 0
-        if self.D.access(v-1) == 0 and v > self.num_of_trees:
+        if self.D.access(v-1) == 0 and self.T.parent(v) != 0:
             T_outdegree += 1
         if self.T.degree(v) > 0:
             child_last = self.T.child(v, self.T.degree(v))
@@ -94,11 +94,11 @@ class DirectedTrexGraph:
 
         j = i
         # return parent in T if asked for 
-        if i == 1 and self.D.access(v-1) == 0 and v > self.num_of_trees:
+        if i == 1 and self.D.access(v-1) == 0 and self.T.parent(v) != 0:
                 return self.T.parent(v)
         # otherwise pick i'th/(i-1)'th outgoing child in T
         if i<= T_outdegree and self.T.degree(v) != 0:
-            if self.D.access(v-1) == 0 and v > self.num_of_trees:
+            if self.D.access(v-1) == 0 and self.T.parent(v) != 0:
                 j = i-1
             # first childs name 
             c_1 = self.T.child(v,1)
@@ -121,17 +121,17 @@ class DirectedTrexGraph:
             print("there is no " + str(i) + "'th inneighbor of " + str(v))
             return -1
         T_indegree = 0
-        if self.D.access(v-1) == 1 and v > self.num_of_trees:
+        if self.D.access(v-1) == 1 and self.T.parent(v) != 0:
             T_indegree += 1
         if self.T.degree(v) > 0:
             child_last = self.T.child(v, self.T.degree(v))
             child_first = self.T.child(v,1)
             T_indegree += self.D.rank(child_last - 1, 0) - self.D.rank(child_first - 2 ,0)
         j = i
-        if i == 1 and self.D.access(v-1) == 1 and v > self.num_of_trees:
+        if i == 1 and self.D.access(v-1) == 1 and self.T.parent(v) != 0:
                 return self.T.parent(v)
         if i<= T_indegree and self.T.degree(v) != 0:
-            if self.D.access(v-1) == 1 and v > self.num_of_trees:
+            if self.D.access(v-1) == 1 and self.T.parent(v) != 0:
                 j = i-1
             c_1 = self.T.child(v,1)
             o = self.D.rank(c_1 - 2, 0)
@@ -158,13 +158,13 @@ class DirectedTrexGraph:
             print("There's no edge from " + str(v) + " to " + str(w))
             return -1
 
-        if self.T.parent(v) == w and self.D.access(v-1) == 0 and v > self.num_of_trees:
+        if self.T.parent(v) == w and self.D.access(v-1) == 0 and self.T.parent(v) != 0:
             return 1
         
         if self.T.parent(w) == v:
             c_1 = self.T.child(v,1)
             j = self.D.rank(w - 1,1) - self.D.rank(c_1 - 2, 1)
-            if self.D.access(v-1) == 0 and v > self.num_of_trees:
+            if self.D.access(v-1) == 0 and self.T.parent(v) != 0:
                 j += 1
             return j
 
@@ -174,7 +174,7 @@ class DirectedTrexGraph:
         j = self.A_prime.select(r + 1 , w) - s + 1
         # might wanna add a outdegree method to Wavelet tree. 
         T_outdegree = 0
-        if self.D.access(v-1) == 0 and v > self.num_of_trees:
+        if self.D.access(v-1) == 0 and self.T.parent(v) != 0:
             T_outdegree += 1
         if self.T.degree(v) > 0:
             child_last = self.T.child(v, self.T.degree(v))
@@ -191,13 +191,13 @@ class DirectedTrexGraph:
 
 
 
-        if self.T.parent(v) == w and self.D.access(v-1) == 1 and v > self.num_of_trees:
+        if self.T.parent(v) == w and self.D.access(v-1) == 1 and self.T.parent(v) != 0:
             return 1
         
         if self.T.parent(w) == v and self.D.access(w-1) == 0:
             c_1 = self.T.child(v,1)
             j = self.D.rank(w - 1,0) - self.D.rank(c_1 - 2, 0)
-            if self.D.access(v-1) == 1 and v > self.num_of_trees:
+            if self.D.access(v-1) == 1 and self.T.parent(v) != 0:
                 j += 1
             return j
         
@@ -205,7 +205,7 @@ class DirectedTrexGraph:
         j = self.A_prime.rank(s - 1, v) + 1
 
         T_indegree = 0
-        if self.D.access(v-1) == 1 and v > self.num_of_trees:
+        if self.D.access(v-1) == 1 and self.T.parent(v) != 0:
             T_indegree += 1
         if self.T.degree(v) > 0:
             child_last = self.T.child(v, self.T.degree(v))
@@ -218,9 +218,9 @@ class DirectedTrexGraph:
     def is_edge(self, u: int, v: int) -> bool:
         
         # check in the Tree 
-        if u != 1 and self.D.access(u - 1) == 0 and self.T.parent(u) == v:
+        if self.T.parent(u) != 0 and self.D.access(u - 1) == 0 and self.T.parent(u) == v:
             return True
-        if v > self.num_of_trees and self.D.access(v - 1) == 1 and self.T.parent(v) == u:
+        if self.T.parent(v) != 0 and self.D.access(v - 1) == 1 and self.T.parent(v) == u:
             return True
         
         # check in A_prime

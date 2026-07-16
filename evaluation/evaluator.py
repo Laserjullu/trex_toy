@@ -358,7 +358,7 @@ class Evaluator:
                 for w in both_neighbors:
                     # making sure that there are no duplicates
                     if v<w<u: 
-                        triangle_weight = G_undirected[u][v]["weight"] + G_undirected[v][w]["weight"] + G_undirected[w][u]["weight"]
+                        triangle_weight = math.log2(G_undirected[u][v]["weight"]) + math.log2(G_undirected[v][w]["weight"]) + math.log2(G_undirected[w][u]["weight"])
                         triangles.append((triangle_weight, u, v, w))
                 
         for (triangle_weight, u, v, w) in sorted(triangles):

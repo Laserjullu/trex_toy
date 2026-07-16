@@ -34,9 +34,9 @@ class Builder:
         for u, v in G.edges():
             weight = G.in_degree(v)
             if G.has_edge(v, u):
-                #weight = min(G.in_degree(u), weight)
+                weight = min(G.in_degree(u), weight)
                 #temporal
-                weight = max(G.in_degree(u), weight)
+                #weight = max(G.in_degree(u), weight)
             G_undirected[u][v]['weight'] = weight
 
         # we create a new Graph in which we later remove all the edges, such that we still have the original graph stored. 
@@ -51,8 +51,8 @@ class Builder:
         for component in tqdm(components, total = len(components)):
 
             subgraph = G_undirected.subgraph(component)
-            #Tree = nx.minimum_spanning_tree(subgraph)
-            Tree = nx.maximum_spanning_tree(subgraph)
+            Tree = nx.minimum_spanning_tree(subgraph)
+            #Tree = nx.maximum_spanning_tree(subgraph)
             #temporary
             #Tree = self.random_spanning_tree(subgraph)
             # arbitrary root choice for each weak component
@@ -88,17 +88,17 @@ class Builder:
                 
 
                 if G.has_edge(parent, child) and G.has_edge(child, parent):
-                    # if G.in_degree(child) <= G.in_degree(parent):
-                    #     D[i-1] = 1
-                    #     G_minus_T.remove_edge(parent, child)
-                    # else:
-                    #     G_minus_T.remove_edge(child,parent)
-                    #temporal
-                     if G.in_degree(child) > G.in_degree(parent):
-                         D[i-1] = 1
-                         G_minus_T.remove_edge(parent, child)
-                     else:
-                         G_minus_T.remove_edge(child,parent)
+                    if G.in_degree(child) <= G.in_degree(parent):
+                        D[i-1] = 1
+                        G_minus_T.remove_edge(parent, child)
+                    else:
+                        G_minus_T.remove_edge(child,parent)
+                    #  if G.in_degree(child) > G.in_degree(parent):
+                    #      D[i-1] = 1
+                    #      G_minus_T.remove_edge(parent, child)
+                    #  else:
+                    #      G_minus_T.remove_edge(child,parent)
+                    #temporary
                     # if random.random() < 0.5:
                     #     D[i-1] = 1
                     #     G_minus_T.remove_edge(parent, child)
@@ -138,7 +138,7 @@ class Builder:
         if len(new_names) > 1000:
             new_names = {}
 
-        return DirectedTrexGraph(T, A_prime, S_prime, D, len(roots), sorted(new_names.items())), G_minus_T
+        return DirectedTrexGraph(T, A_prime, S_prime, D, sorted(new_names.items())), G_minus_T
     
 
     def build_undirected(self, G: nx.Graph) -> UndirectedTrexGraph: 
@@ -171,9 +171,9 @@ class Builder:
         for component in nx.connected_components(G_mst):
 
             subgraph = G_mst.subgraph(component)
-            #Tree = nx.minimum_spanning_tree(subgraph)
+            Tree = nx.minimum_spanning_tree(subgraph)
             #temporary
-            Tree = nx.maximum_spanning_tree(subgraph)
+            #Tree = nx.maximum_spanning_tree(subgraph)
             #Tree = self.random_spanning_tree(subgraph)
             roots.append(list(Tree.nodes())[0])
             forest.add_edges_from(Tree.edges())
@@ -227,7 +227,7 @@ class Builder:
         S_prime = DummyBitvector(S_prime)
 
         
-        return UndirectedTrexGraph(T, A_prime, S_prime, len(roots), sorted(new_names.items())), G_minus_T, G_greedy
+        return UndirectedTrexGraph(T, A_prime, S_prime, sorted(new_names.items())), G_minus_T, G_greedy
     
     def random_spanning_tree(self, G: nx.Graph) -> nx.Graph:
         for (u,v) in G.edges():
