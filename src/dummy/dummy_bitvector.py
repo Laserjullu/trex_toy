@@ -23,7 +23,6 @@ class DummyBitvector(AbstractBitVector):
                 count += 1
                 if count == j:
                     return i
-        i += 1
         print("there are fewer than " + str(j) + " occurences of bit " + str(bit))
     
     # inklusive predecessor, exklusive sucessor

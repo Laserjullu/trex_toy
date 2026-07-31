@@ -42,6 +42,7 @@ y_predicted = model.predict(x_test)
 print(model.summary())
 
 print(sk.r2_score(np.exp2(y_actual), np.exp2(y_predicted)))
+print("Mean absolut error:")
 print(sk.mean_absolute_error(np.exp2(y_actual), np.exp2(y_predicted)))
 
 data = [[1.0, np.log2(2.997)]]
@@ -51,10 +52,12 @@ print(np.column_stack((np.exp2(y_actual), np.exp2(y_predicted))))
 
 
 
-# setting the slope to -1 manually
+# setting the slope to -1 manually but not refitting Beta_0
 
 y_predicted_log_manual = model.params[0] - 1.0 * x_test[:, 1]
 
-y_predicted_manual = np.exp2(y_predicted_log_manual)
 
-print(sk.mean_absolute_error(np.exp2(y_actual), y_predicted_manual))
+print(np.column_stack((np.exp2(y_predicted), np.exp2(y_predicted_log_manual), np.exp2(y_actual))))
+
+print("Mean absolute error with a descent of -1")
+print(sk.mean_absolute_error(np.exp2(y_actual), np.exp2(y_predicted_log_manual)))

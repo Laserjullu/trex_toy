@@ -37,7 +37,6 @@ def trex_on_directory(directory: str, output_path = "trex_results.csv", undirect
             metrics["trex time"] = trex_time
             metrics["evaluation time"] = evaluation_time
             results_as_dict.append(metrics)
-            print(metrics)
         else:
             G = nx.read_edgelist(path, create_using=nx.DiGraph(), comments = '#')
             start = time.time()
@@ -62,11 +61,11 @@ def trex_on_directory(directory: str, output_path = "trex_results.csv", undirect
     df["planar bpe"] = df["total bits planar"] / df["m"]
     df["planar edges vs maximum"] = 100 * df["planar edges"]/(np.floor(df["n"] * 1.5 - 1.5))
 
-    df["bound 1.6 vs trex"] = df["upper bound 1.6"] - df["trex entropy"]
-    df["normalized bound 1.6 difference"] = df["bound 1.6 vs trex"] / (df["n"] * np.log2(df["n"]))
+    df["DUB vs trex"] = df["DUB"] - df["trex entropy"]
+    df["normalized DUB difference"] = df["DUB vs trex"] / (df["n"] * np.log2(df["n"]))
 
-    df["bound 1.7 vs trex"] = df["upper bound 1.7"] - df["trex entropy"]
-    df["normalized bound 1.7 difference"] = df["bound 1.7 vs trex"] / (df["n"] * np.log2(df["n"]))
+    df["NIB vs trex"] = df["NIB"] - df["trex entropy"]
+    df["normalized NIB difference"] = df["NIB vs trex"] / (df["n"] * np.log2(df["n"]))
 
     df["alpha 1.7"] = df["n"]/df["non zero indegree nodes"]
     df["density"] = df["m"]/df["n"]

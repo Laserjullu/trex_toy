@@ -117,8 +117,8 @@ class Evaluator:
         if G.number_of_edges() < 1000000:
             iterations = 13
         #temporary
-        #G_prime_density = density_greedy(G, iterations)[0]
-        G_prime_density = -1
+        G_prime_density = density_greedy(G, iterations)[0]
+        #G_prime_density = -1
 
         G_density = G.number_of_edges() / G.number_of_nodes()
         alpha_16 = G_prime_density / G_density
@@ -137,8 +137,8 @@ class Evaluator:
             if G_greedy.in_degree(v) > 0:
                 non_zero_indegrees += 1
         
-        alpha_17 = n/non_zero_indegrees
-        upper_bound_17 = H_indegree_total - ((n)/(2 * alpha_17)) * H_indegree + (2* n)/math.log(2)
+        alpha_NIB = n/non_zero_indegrees
+        upper_bound_NIB = H_indegree_total - ((n)/(2 * alpha_NIB)) * H_indegree + (2* n)/math.log(2)
 
         indegrees = []
         for v in G_greedy.nodes():
@@ -160,15 +160,15 @@ class Evaluator:
             "array total bits": G_array_entropy,
             "bitvector total bits": G_entropy_bitvector,
             "bitvector system total bits": G_entropy_bitvector_system, 
-            "bitvector greedy total bits": G_entropy_bitvector_greedy,
             "bitvector worst case total bits": G_entropy_bitvector_worst_case,
+            "bitvector greedy total bits": G_entropy_bitvector_greedy,
             "bitvector random total bits": G_entropy_bitvector_random, 
             "total bits trex": trex_total, 
             "trex entropy": trex_entropy,
             "alpha 1.6": alpha_16,
-            "upper bound 1.6": upper_bound_16,
+            "DUB": upper_bound_16,
             "non zero indegree nodes": non_zero_indegrees,
-            "upper bound 1.7": upper_bound_17,
+            "NIB": upper_bound_NIB,
             "indegree coefficient of variation": indegree_CV,
             "number of classes": num_classes,
             "maximum class degree": maximum_class_degree
@@ -226,9 +226,9 @@ class Evaluator:
         iterations = 1
         if G.number_of_edges() < 1000000:
             iterations = 13
-        #G_prime_density = density_greedy(G_multigraph, iterations)[0]
+        G_prime_density = density_greedy(G_multigraph, iterations)[0]
         #temporary
-        G_prime_density = -1
+        #G_prime_density = -1
         del G_multigraph
 
         G_density = G.number_of_edges() / G.number_of_nodes()
@@ -250,8 +250,8 @@ class Evaluator:
             if G.in_degree(v) > 0:
                 non_zero_indegrees += 1
         
-        alpha_17 = n /non_zero_indegrees
-        upper_bound_17 = H_indegree_total - ((n)/(2 * alpha_17)) * H_indegree + (2* n)/math.log(2)
+        alpha_NIB = n /non_zero_indegrees
+        upper_bound_NIB = H_indegree_total - ((n)/(2 * alpha_NIB)) * H_indegree + (2* n)/math.log(2)
 
         indegrees = []
         for v in G.nodes(): 
@@ -287,9 +287,9 @@ class Evaluator:
             "total bits trex": trex_total, 
             "trex entropy": trex_entropy,
             "alpha 1.6": alpha_16,
-            "upper bound 1.6": upper_bound_16,
+            "DUB": upper_bound_16,
             "non zero indegree nodes": non_zero_indegrees,
-            "upper bound 1.7": upper_bound_17,
+            "NIB": upper_bound_NIB,
             "indegree coefficient of variation": indegree_CV,
             "number of classes": num_classes,
             "maximum class degree": maximum_class_degree
@@ -340,7 +340,7 @@ class Evaluator:
                 indegree = G_prime.in_degree(v)
                 if indegree > 0:
                     planar_total += indegree * math.log2(m_dash/indegree)
-            # 2.5 because we leave out the edges for the direction bitvector.
+    
             planar_total += 2.092 * G.number_of_nodes() + math.log2(math.comb(m_dash + G_prime.number_of_nodes(), G_prime.number_of_nodes()))
 
             return planar_total, len(planar_edges)
@@ -358,6 +358,7 @@ class Evaluator:
                 for w in both_neighbors:
                     # making sure that there are no duplicates
                     if v<w<u: 
+                        # a weight can never be zero, therefore no safety check necessary 
                         triangle_weight = math.log2(G_undirected[u][v]["weight"]) + math.log2(G_undirected[v][w]["weight"]) + math.log2(G_undirected[w][u]["weight"])
                         triangles.append((triangle_weight, u, v, w))
                 

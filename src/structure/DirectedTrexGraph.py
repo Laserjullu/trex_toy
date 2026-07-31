@@ -21,7 +21,12 @@ class DirectedTrexGraph:
     def print(self):
         if len(self.D.bits) < 100:
             print("T: " + str(self.T.B.bits))
-            print("A_prime : some wavelet tree with root: " + str(self.A_prime.root.B.bits))
+            if self.A_prime.root is None:
+                print("empty wavelet tree")
+            elif self.A_prime.root.B is None:
+                print("Wavelet TREE consits of only a single leaf with value " + str(self.A_prime.root.a))
+            else:
+                print("A_prime : some wavelet tree with root: " + str(self.A_prime.root.B.bits))
             print("S_prime': " + str(self.S_prime.bits))
             print("D: " + str(self.D.bits))
             print("Renamings: " + str(self.new_names))
@@ -43,9 +48,7 @@ class DirectedTrexGraph:
         return outgoing_A_prime + outgoing_T
     
     def indegree(self, v: int) -> int:
-        # preference? 
         # alternative without extra function and attribute: ingoing_A_prime = self.A_prime.rank(len(self.A_prime.root.B.bits) -1 , v)
-        # huhu ich bins elii
         ingoing_A_prime = self.A_prime.rank(len(self.A_prime) -1, v)
 
         ingoing_T = 0
@@ -79,7 +82,7 @@ class DirectedTrexGraph:
     
     def outneighbor (self, v: int, i: int) -> int:
 
-        if i > self.outdegree(v):
+        if i > self.outdegree(v) or i < 1:
             print("there is no " + str(i) + "'th outneighbor of " + str(v))
             return -1
 
@@ -117,43 +120,44 @@ class DirectedTrexGraph:
 
     def inneighbor(self, v:int, i: int) -> int:
 
-        if i > self.indegree(v):
+
+        if i > self.indegree(v) or i< 1:
             print("there is no " + str(i) + "'th inneighbor of " + str(v))
             return -1
-        T_indegree = 0
-        if self.D.access(v-1) == 1 and self.T.parent(v) != 0:
-            T_indegree += 1
+        
+        has_ingoing_parent = (self.D.access(v-1) == 1 and self.T.parent(v) != 0)
+
+        T_indegree = int(has_ingoing_parent)
+
         if self.T.degree(v) > 0:
             child_last = self.T.child(v, self.T.degree(v))
             child_first = self.T.child(v,1)
             T_indegree += self.D.rank(child_last - 1, 0) - self.D.rank(child_first - 2 ,0)
         j = i
-        if i == 1 and self.D.access(v-1) == 1 and self.T.parent(v) != 0:
-                return self.T.parent(v)
+        if i == 1 and has_ingoing_parent:
+            return self.T.parent(v)
         if i<= T_indegree and self.T.degree(v) != 0:
-            if self.D.access(v-1) == 1 and self.T.parent(v) != 0:
+            if has_ingoing_parent:
                 j = i-1
             c_1 = self.T.child(v,1)
             o = self.D.rank(c_1 - 2, 0)
             return self.D.select(j + o, 0) + 1
         
-
         # rest was parallel, but here we now have to first again calculate j, the how manyth inneihbor we are looking for in A_prime, then we 
         # select the position of that edge in A_prime, then the position in S_prime, and lastly we only need to calculate what node this belongs to in S_prime.
-        if i <= self.indegree(v):
-            j = i - T_indegree
-            y = self.A_prime.select(j, v)
-            # y is zero based
-            a = self.S_prime.select(y + 1, 0)
-            # lastly check which node this edge belongs to by counting succeeding 1's in S_prime. 
-            return self.S_prime.rank(a, 1) 
+
+        j = i - T_indegree
+        y = self.A_prime.select(j, v)
+        # y is zero based
+        a = self.S_prime.select(y + 1, 0)
+        # lastly check which node this edge belongs to by counting succeeding 1's in S_prime. 
+        return self.S_prime.rank(a, 1) 
         
         
         
     
     def outneighbor_rank(self, v: int, w: int) -> int:
-        # needs adjustment for specifically no outneighbors
-
+        
         if self.is_edge(v, w) == False:
             print("There's no edge from " + str(v) + " to " + str(w))
             return -1
@@ -184,7 +188,7 @@ class DirectedTrexGraph:
     
     def inneighbor_rank(self, v: int, w: int) -> int:
 
-        # first we the directed adjacency check: 
+        # first we do the directed adjacency check: 
         if self.is_edge(w, v) == False:
             print("There's no edge from " + str(w) + " to " + str(v))
             return -1

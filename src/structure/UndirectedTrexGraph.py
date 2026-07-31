@@ -23,7 +23,9 @@ class UndirectedTrexGraph:
             print("Renamings: " + str(self.new_names))
       
     def degree(self, v: int) -> int:
+        # number of children within the tree
         T_degree = self.T.degree(v)
+        # one must be added if v is not a root
         if self.T.parent(v) != 0:
             T_degree += 1
         s = self.S_prime.select(v, 1)
@@ -88,7 +90,6 @@ class UndirectedTrexGraph:
         print(str(v) + " has no " + str(i) + "'th neighbor")
         return -1
         
-    # this unfortunately isn't symmetric, but shoult it be? Do I even have to implement it? 
     def neighbor_rank(self, v: int, w: int) -> int:
     
         if self.adjacent(v, w) == False:

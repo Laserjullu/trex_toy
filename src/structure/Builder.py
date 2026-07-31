@@ -4,12 +4,7 @@ from src.dummy.dummy_wavelet import DummyWaveletTree
 from src.dummy.dummy_bitvector import DummyBitvector
 from structure.DirectedTrexGraph import DirectedTrexGraph
 from structure.UndirectedTrexGraph import UndirectedTrexGraph
-import math
-from src.functions.density import density_greedy
-from networkx.utils import UnionFind
 from tqdm import tqdm
-import time
-import numpy as np
 import random
 
 
@@ -76,7 +71,7 @@ class Builder:
         bfs_edges_list = list(bfs_edges)
         del forest
 
-        for parent, child in tqdm(bfs_edges_list, total = len(bfs_edges_list)):
+        for parent, child in bfs_edges_list:
             if parent == "super_root":
                 new_names[child] = i
                 nodes[child] = TreeNode()
@@ -116,7 +111,7 @@ class Builder:
         S_prime = []
 
         # creation of A_prime and S_prime, we implicitly get all the original namings in the right order. 
-        for original, i in tqdm(new_names.items(), total = len(new_names.items())):
+        for original, i in new_names.items():
    
             outneighbors = list(G_minus_T.successors(original))
 
@@ -225,7 +220,7 @@ class Builder:
         T = DummyLouds(forest_roots)
         A_prime = DummyWaveletTree(A_prime)
         S_prime = DummyBitvector(S_prime)
-
+        
         
         return UndirectedTrexGraph(T, A_prime, S_prime, sorted(new_names.items())), G_minus_T, G_greedy
     

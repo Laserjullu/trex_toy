@@ -48,10 +48,6 @@ class test_TrexGraph(unittest.TestCase):
         print("inneighbor ranks for node 1:")
         print(str(graph.inneighbor_rank(2, 3)))
 
-
-
-        print("Passed! :)")
-
         graph.print()
 
         print("second experimental part starts here, undirected Karate: \n \n \n ")
@@ -85,6 +81,11 @@ class test_TrexGraph(unittest.TestCase):
         optimal_trex_graph, G_minus_T= b.build(good_G)
         optimal_trex_graph.print()
 
+        empty_wavelet = nx.DiGraph()
+        empty_wavelet.add_edges_from(((1,2),(2,3),(3,4)))
+        empty_wavelet_trex_graph, G_minus_T = b.build(empty_wavelet)
+        empty_wavelet_trex_graph.print()
+
         print("\n\nSame Karate Graph, but undirected this time:\n")
         G = nx.karate_club_graph()
         b = Builder()
@@ -99,10 +100,26 @@ class test_TrexGraph(unittest.TestCase):
         b = Builder()
         graph, G_minus_T = b.build(G)
         graph.print()
+        print(str(graph.inneighbor(4,1)))
         print(str(graph.outdegree(2)))
         print(str(graph.outdegree(3)))
         print(str(graph.outdegree(1)))
         print(str(graph.outdegree(4)))
+
+        print("exemplary graph for visual example in thesis: ")
+        allrounder = nx.DiGraph()
+        edges = [
+        (3, 1), (1, 2), (4, 2), (2, 4), (5, 4), (5, 7),
+        (5, 8), (2, 5), (2, 6), (8, 6), (5, 6),
+        (6, 3), (3, 6), (5, 3)
+        ]
+        allrounder.add_edges_from(edges)
+        graph, G_minus_T = b.build(allrounder)
+        graph.print()
+
+
+
+
 
 if __name__ == '__main__':
     unittest.main()
