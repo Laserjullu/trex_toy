@@ -26,11 +26,11 @@ def trex_on_directory(directory: str, output_path = "trex_results.csv", undirect
         if undirected:
             G = nx.read_edgelist(path, create_using=nx.Graph(), comments = '#')
             start = time.time()
-            G_built, G_minus_T, G_greedy = builder.build(G)
+            G_built, G_minus_T, G_greedy = builder.build(G, extraction_strategy = "random")
             trex_time = time.time() - start
 
             start = time.time()
-            metrics = Evaluator.evaluate(G, G_minus_T, G_built, G_greedy, planar=True)
+            metrics = Evaluator.evaluate(G, G_minus_T, G_built, G_greedy, planar=True, skip_greedy = True)
             evaluation_time = time.time() - start
             metrics["Dataset"] = filename
             metrics["trex vs bitvector (greedy) (%)"] = (1 - metrics["total bits trex"] / metrics["bitvector greedy total bits"]) * 100
@@ -40,11 +40,11 @@ def trex_on_directory(directory: str, output_path = "trex_results.csv", undirect
         else:
             G = nx.read_edgelist(path, create_using=nx.DiGraph(), comments = '#')
             start = time.time()
-            G_built, G_minus_T = builder.build(G)
+            G_built, G_minus_T = builder.build(G, extraction_strategy = "random")
             trex_time = time.time() - start
 
             start = time.time()
-            metrics = Evaluator.evaluate(G, G_minus_T, G_built, planar=True)
+            metrics = Evaluator.evaluate(G, G_minus_T, G_built, planar=True, skip_greedy = True)
             evaluation_time = time.time() - start
             metrics["Dataset"] = filename
             metrics["trex vs bitvector (greedy) (%)"] = (1 - metrics["total bits trex"] / metrics["bitvector total bits"]) * 100

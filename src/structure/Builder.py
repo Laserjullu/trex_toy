@@ -14,24 +14,25 @@ class Builder:
         pass
 
 
-    def build(self, G, planar: bool = False):
+    def build(self, G, planar: bool = False, extraction_strategy = "greedy"):
         if isinstance(G, nx.DiGraph):
-            return self.build_directed(G)
+            return self.build_directed(G, extraction_strategy)
         if isinstance(G, nx.Graph):
-            return self.build_undirected(G)
+            return self.build_undirected(G, extraction_strategy)
     
 
         
-    def build_directed(self, G: nx.DiGraph) -> DirectedTrexGraph:
-        
+    def build_directed(self, G: nx.DiGraph, extraction_strategy = "greedy") -> DirectedTrexGraph:
+        random.seed(170826)
         # we determine the weights by taking the lower indegree of both target vertices, if existing.
         G_undirected = G.to_undirected()
         for u, v in G.edges():
             weight = G.in_degree(v)
             if G.has_edge(v, u):
-                weight = min(G.in_degree(u), weight)
-                #temporal
-                #weight = max(G.in_degree(u), weight)
+                if extraction_strategy == "anti-greedy":
+                    weight = max(G.in_degree(u), weight)
+                else:
+                    weight = min(G.in_degree(u), weight)
             G_undirected[u][v]['weight'] = weight
 
         # we create a new Graph in which we later remove all the edges, such that we still have the original graph stored. 
@@ -46,10 +47,13 @@ class Builder:
         for component in tqdm(components, total = len(components)):
 
             subgraph = G_undirected.subgraph(component)
-            Tree = nx.minimum_spanning_tree(subgraph)
-            #Tree = nx.maximum_spanning_tree(subgraph)
+            if extraction_strategy == "greedy":
+                Tree = nx.minimum_spanning_tree(subgraph)
+            if extraction_strategy == "anti-greedy":
+                Tree = nx.maximum_spanning_tree(subgraph)
             #temporary
-            #Tree = self.random_spanning_tree(subgraph)
+            if extraction_strategy == "random":
+                Tree = self.random_spanning_tree(subgraph)
             # arbitrary root choice for each weak component
             roots.append(list(Tree.nodes())[0])
             forest.add_edges_from(Tree.edges())
@@ -83,22 +87,24 @@ class Builder:
                 
 
                 if G.has_edge(parent, child) and G.has_edge(child, parent):
-                    if G.in_degree(child) <= G.in_degree(parent):
-                        D[i-1] = 1
-                        G_minus_T.remove_edge(parent, child)
-                    else:
-                        G_minus_T.remove_edge(child,parent)
-                    #  if G.in_degree(child) > G.in_degree(parent):
-                    #      D[i-1] = 1
-                    #      G_minus_T.remove_edge(parent, child)
-                    #  else:
-                    #      G_minus_T.remove_edge(child,parent)
-                    #temporary
-                    # if random.random() < 0.5:
-                    #     D[i-1] = 1
-                    #     G_minus_T.remove_edge(parent, child)
-                    # else:
-                    #     G_minus_T.remove_edge(child,parent)
+                    if extraction_strategy == "greedy":
+                        if G.in_degree(child) <= G.in_degree(parent):
+                            D[i-1] = 1
+                            G_minus_T.remove_edge(parent, child)
+                        else:
+                            G_minus_T.remove_edge(child,parent)
+                    if extraction_strategy == "anti-greedy":
+                        if G.in_degree(child) > G.in_degree(parent):
+                            D[i-1] = 1
+                            G_minus_T.remove_edge(parent, child)
+                        else:
+                            G_minus_T.remove_edge(child,parent)
+                    if extraction_strategy == "random":
+                        if random.random() < 0.5:
+                            D[i-1] = 1
+                            G_minus_T.remove_edge(parent, child)
+                        else:
+                            G_minus_T.remove_edge(child,parent)
                 elif G.has_edge(parent, child):
                     D[i - 1] = 1
                     G_minus_T.remove_edge(parent, child)
@@ -136,7 +142,7 @@ class Builder:
         return DirectedTrexGraph(T, A_prime, S_prime, D, sorted(new_names.items())), G_minus_T
     
 
-    def build_undirected(self, G: nx.Graph) -> UndirectedTrexGraph: 
+    def build_undirected(self, G: nx.Graph, extraction_strategy = "greedy") -> UndirectedTrexGraph: 
         G_minus_T = nx.DiGraph()
         # the undirected graph for the spanning Tree
         G_mst = nx.Graph()
@@ -166,10 +172,13 @@ class Builder:
         for component in nx.connected_components(G_mst):
 
             subgraph = G_mst.subgraph(component)
-            Tree = nx.minimum_spanning_tree(subgraph)
+            if extraction_strategy == "greedy": 
+                Tree = nx.minimum_spanning_tree(subgraph)
             #temporary
-            #Tree = nx.maximum_spanning_tree(subgraph)
-            #Tree = self.random_spanning_tree(subgraph)
+            if extraction_strategy == "anti-greedy":
+                Tree = nx.maximum_spanning_tree(subgraph)
+            if extraction_strategy == "random":
+                Tree = self.random_spanning_tree(subgraph)
             roots.append(list(Tree.nodes())[0])
             forest.add_edges_from(Tree.edges())
 

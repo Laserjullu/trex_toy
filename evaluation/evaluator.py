@@ -11,7 +11,7 @@ import random
 class Evaluator: 
 
     @staticmethod
-    def evaluate(G, G_minus_T, G_built, G_greedy = None, planar = True):
+    def evaluate(G, G_minus_T, G_built, G_greedy = None, planar = True, skip_greedy = False):
         if isinstance(G, nx.DiGraph):
             type = "directed"
         elif isinstance(G, nx.Graph):
@@ -20,10 +20,10 @@ class Evaluator:
         metrics["avg cc"] = nx.average_clustering(G)
 
         if isinstance(G, nx.DiGraph):
-            metrics.update(Evaluator.directed_metrics(G, G_minus_T))
+            metrics.update(Evaluator.directed_metrics(G, G_minus_T, skip_greedy = skip_greedy))
             
         elif isinstance(G, nx.Graph):
-            metrics.update(Evaluator.undirected_metrics(G, G_minus_T, G_greedy))
+            metrics.update(Evaluator.undirected_metrics(G, G_minus_T, G_greedy, skip_greedy = skip_greedy))
             
         if planar:
             planar_total, planar_edges = Evaluator.build_planar(G)
@@ -32,7 +32,7 @@ class Evaluator:
         return metrics
 
     @staticmethod 
-    def undirected_metrics(G: nx.Graph, G_minus_T: nx.Graph, G_greedy: nx.DiGraph):
+    def undirected_metrics(G: nx.Graph, G_minus_T: nx.Graph, G_greedy: nx.DiGraph, skip_greedy = False):
         # entropy calculation 
         m = G.number_of_edges()
         G_entropy_bitvector_greedy = 0
@@ -75,6 +75,7 @@ class Evaluator:
         
         #truly independent random choice for only storing a single edge
         G_random = G.to_directed()
+        random.seed(170826)
         for u, v in G.edges():
             if random.random() > 0.5:
                 G_random.remove_edge (v, u)
@@ -117,8 +118,10 @@ class Evaluator:
         if G.number_of_edges() < 1000000:
             iterations = 13
         #temporary
-        G_prime_density = density_greedy(G, iterations)[0]
-        #G_prime_density = -1
+        if skip_greedy == True: 
+            G_prime_density = -1
+        else:
+            G_prime_density = density_greedy(G, iterations)[0]
 
         G_density = G.number_of_edges() / G.number_of_nodes()
         alpha_16 = G_prime_density / G_density
@@ -176,7 +179,7 @@ class Evaluator:
 
 
     @staticmethod
-    def directed_metrics(G: nx.DiGraph, G_minus_T: nx.DiGraph):
+    def directed_metrics(G: nx.DiGraph, G_minus_T: nx.DiGraph, skip_greedy = False):
 
         # entropy calculation
         m = G.number_of_edges()
@@ -226,9 +229,11 @@ class Evaluator:
         iterations = 1
         if G.number_of_edges() < 1000000:
             iterations = 13
-        G_prime_density = density_greedy(G_multigraph, iterations)[0]
+        if skip_greedy == True:
+            G_prime_density = -1
+        else:
+            G_prime_density = density_greedy(G_multigraph, iterations)[0]
         #temporary
-        #G_prime_density = -1
         del G_multigraph
 
         G_density = G.number_of_edges() / G.number_of_nodes()
