@@ -143,6 +143,7 @@ class Builder:
     
 
     def build_undirected(self, G: nx.Graph, extraction_strategy = "greedy") -> UndirectedTrexGraph: 
+        random.seed(170826)
         G_minus_T = nx.DiGraph()
         # the undirected graph for the spanning Tree
         G_mst = nx.Graph()
