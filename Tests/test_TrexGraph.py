@@ -1,8 +1,6 @@
 import unittest
 
 
-from structure.DirectedTrexGraph import DirectedTrexGraph
-from structure.UndirectedTrexGraph import UndirectedTrexGraph
 from src.structure.Builder import Builder
 import networkx as nx
 import math 
@@ -116,8 +114,6 @@ class test_TrexGraph(unittest.TestCase):
         allrounder.add_edges_from(edges)
         graph, G_minus_T = b.build(allrounder)
         graph.print()
-
-
 
 
 

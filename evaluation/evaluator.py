@@ -36,7 +36,7 @@ class Evaluator:
         # entropy calculation 
         m = G.number_of_edges()
         G_entropy_bitvector_greedy = 0
-        G_entropy_bitvector_system = 0
+        G_entropy_bitvector_lexicographical = 0
         G_entropy_bitvector_random = 0
         G_entropy_bitvector_worst_case = 0
         G_entropy_bitvector = 0
@@ -60,18 +60,18 @@ class Evaluator:
                 G_entropy_bitvector += degree * math.log2((2*m)/degree)
         G_entropy_bitvector += math.log2(math.comb((2*m) + n, n))
         
-        G_system = G.to_directed()
+        G_lexicographical = G.to_directed()
         for u, v in G.edges():
             if u < v: 
-                G_system.remove_edge(u,v)
+                G_lexicographical.remove_edge(u,v)
             else: 
-                G_system.remove_edge(v,u)
+                G_lexicographical.remove_edge(v,u)
         
-        for v in G_system.nodes():
-            indegree = G_system.in_degree(v)
+        for v in G_lexicographical.nodes():
+            indegree = G_lexicographical.in_degree(v)
             if indegree > 0:
-                G_entropy_bitvector_system += indegree * math.log2(m/indegree)
-        G_entropy_bitvector_system += math.log2(math.comb(m + n, n))        
+                G_entropy_bitvector_lexicographical += indegree * math.log2(m/indegree)
+        G_entropy_bitvector_lexicographical += math.log2(math.comb(m + n, n))        
         
         #truly independent random choice for only storing a single edge
         G_random = G.to_directed()
@@ -110,7 +110,7 @@ class Evaluator:
         trex_entropy = reduced_indegree_entropy
         trex_total += reduced_indegree_entropy + 2* G_minus_T.number_of_nodes() + math.log2(math.comb(m_dash + G_minus_T.number_of_nodes(), G_minus_T.number_of_nodes()))
 
-        entropy_tuple = [G_array_entropy, G_entropy_bitvector, G_entropy_bitvector_system, G_entropy_bitvector_greedy, trex_total, -1]
+        entropy_tuple = [G_array_entropy, G_entropy_bitvector, G_entropy_bitvector_lexicographical, G_entropy_bitvector_greedy, trex_total, -1]
 
         start = time.time()
 
@@ -162,7 +162,7 @@ class Evaluator:
         return{
             "array total bits": G_array_entropy,
             "bitvector total bits": G_entropy_bitvector,
-            "bitvector system total bits": G_entropy_bitvector_system, 
+            "bitvector lexicographical total bits": G_entropy_bitvector_lexicographical, 
             "bitvector worst case total bits": G_entropy_bitvector_worst_case,
             "bitvector greedy total bits": G_entropy_bitvector_greedy,
             "bitvector random total bits": G_entropy_bitvector_random, 
@@ -285,7 +285,7 @@ class Evaluator:
         return{
             "array total bits": G_array_entropy,
             "bitvector total bits": G_entropy_bitvector,
-            "bitvector system total bits": -1, 
+            "bitvector lexicographical total bits": -1, 
             "bitvector random total bits": -1,
             "bitvector greedy total bits": -1,
             "bitvector worst case total bits": -1,

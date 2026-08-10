@@ -2,8 +2,8 @@ import networkx as nx
 from src.dummy.dummy_louds import DummyLouds, TreeNode
 from src.dummy.dummy_wavelet import DummyWaveletTree
 from src.dummy.dummy_bitvector import DummyBitvector
-from structure.DirectedTrexGraph import DirectedTrexGraph
-from structure.UndirectedTrexGraph import UndirectedTrexGraph
+from src.structure.DirectedTrexGraph import DirectedTrexGraph
+from src.structure.UndirectedTrexGraph import UndirectedTrexGraph
 from tqdm import tqdm
 import random
 
@@ -14,7 +14,7 @@ class Builder:
         pass
 
 
-    def build(self, G, planar: bool = False, extraction_strategy = "greedy"):
+    def build(self, G, extraction_strategy = "greedy"):
         if isinstance(G, nx.DiGraph):
             return self.build_directed(G, extraction_strategy)
         if isinstance(G, nx.Graph):
@@ -134,7 +134,6 @@ class Builder:
         A_prime = DummyWaveletTree(A_prime)
         S_prime = DummyBitvector(S_prime)
         D = DummyBitvector(D) 
-
         # makes testing a lot easier
         if len(new_names) > 1000:
             new_names = {}

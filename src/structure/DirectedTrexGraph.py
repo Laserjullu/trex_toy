@@ -14,8 +14,6 @@ class DirectedTrexGraph:
         self.S_prime = S_prime
         self.D = D
         self.new_names = new_names
-        # self.num_of_trees = num_of_trees
-        # can be exchanged for self.T.parent(v) != 0 checks and slightly faster query times 
 
     # for testing
     def print(self):

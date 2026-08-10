@@ -2,11 +2,8 @@ import pandas as pd
 import networkx as nx
 from src.structure.Builder import Builder
 from evaluation.evaluator import Evaluator
-import sys
 import os
-import matplotlib.pyplot as plt
 import time
-from tqdm import tqdm
 import argparse
 import numpy as np
 
@@ -26,11 +23,11 @@ def trex_on_directory(directory: str, output_path = "trex_results.csv", undirect
         if undirected:
             G = nx.read_edgelist(path, create_using=nx.Graph(), comments = '#')
             start = time.time()
-            G_built, G_minus_T, G_greedy = builder.build(G, extraction_strategy = "random")
+            G_built, G_minus_T, G_greedy = builder.build(G)
             trex_time = time.time() - start
 
             start = time.time()
-            metrics = Evaluator.evaluate(G, G_minus_T, G_built, G_greedy, planar=True, skip_greedy = True)
+            metrics = Evaluator.evaluate(G, G_minus_T, G_built, G_greedy, planar=True)
             evaluation_time = time.time() - start
             metrics["Dataset"] = filename
             metrics["trex vs bitvector (greedy) (%)"] = (1 - metrics["total bits trex"] / metrics["bitvector greedy total bits"]) * 100
@@ -40,11 +37,11 @@ def trex_on_directory(directory: str, output_path = "trex_results.csv", undirect
         else:
             G = nx.read_edgelist(path, create_using=nx.DiGraph(), comments = '#')
             start = time.time()
-            G_built, G_minus_T = builder.build(G, extraction_strategy = "random")
+            G_built, G_minus_T = builder.build(G)
             trex_time = time.time() - start
 
             start = time.time()
-            metrics = Evaluator.evaluate(G, G_minus_T, G_built, planar=True, skip_greedy = True)
+            metrics = Evaluator.evaluate(G, G_minus_T, G_built, planar=True)
             evaluation_time = time.time() - start
             metrics["Dataset"] = filename
             metrics["trex vs bitvector (greedy) (%)"] = (1 - metrics["total bits trex"] / metrics["bitvector total bits"]) * 100
@@ -90,10 +87,4 @@ if __name__ == "__main__":
             df = trex_on_directory(args.directory, undirected = False, output_path = args.output)
         else: 
             df = trex_on_directory(args.directory, undirected = False)
-    if args.undirected:
-        df.plot.bar(x = "Dataset", y = ["array total bits", "bitvector total bits", "bitvector worst case total bits", "bitvector random total bits", "bitvector system total bits", "bitvector greedy total bits", "total bits trex", "total bits planar"])
-    else:
-        df.plot.bar(x = "Dataset", y = ["array total bits", "bitvector total bits", "total bits trex", "total bits planar"])
-        
-    print(df.to_latex())
-    plt.show()
+
