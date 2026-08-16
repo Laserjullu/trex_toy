@@ -1,5 +1,4 @@
-import networkx as nx
-from src.dummy.dummy_louds import DummyLouds, TreeNode
+from src.dummy.dummy_louds import DummyLouds
 from src.dummy.dummy_wavelet import DummyWaveletTree
 from src.dummy.dummy_bitvector import DummyBitvector
 
@@ -39,14 +38,13 @@ class UndirectedTrexGraph:
             return True
         
         # we simply check if the rank(v/u) changes within the outneighborhood of u/v in A_prime.
-        # also small typo in the paper, should be v/u rather than 1 , also outdegree(u) is the wrong metric, need to use outdegree - T_outdegree
         A_prime_outdegree_u = self.S_prime.select(u + 1, 1) - self.S_prime.select(u, 1) - 1
-        s = self.S_prime.select(u,1) - u + 1
-        if self.A_prime.rank(s + A_prime_outdegree_u -1, v) - self.A_prime.rank(s - 1, v) >= 1:
+        s = self.S_prime.select(u,1) - u
+        if self.A_prime.rank(s + A_prime_outdegree_u, v) - self.A_prime.rank(s, v) >= 1:
             return True
         A_prime_outdegree_v = self.S_prime.select(v + 1, 1) - self.S_prime.select(v, 1) - 1 
-        s_dash = self.S_prime.select(v,1) - v + 1
-        if self.A_prime.rank(s_dash + A_prime_outdegree_v - 1, u) - self.A_prime.rank(s_dash - 1, u) >= 1:
+        s_dash = self.S_prime.select(v,1) - v
+        if self.A_prime.rank(s_dash + A_prime_outdegree_v, u) - self.A_prime.rank(s_dash, u) >= 1:
             return True
         return False 
     
@@ -59,11 +57,11 @@ class UndirectedTrexGraph:
         if i == 1 and self.T.parent(v) != 0:
             return self.T.parent(v)
 
-        # increase the degree if v has a parent within the tree, decrease the neighbor id we are looking for by one
+        # increase the degree if v has a parent within the tree, decrease the neighbor we are looking for by one
         if self.T.parent(v) != 0:
             j -= 1
             T_degree += 1
-        # now we look within the Tree neighbors
+        # within the Tree neighbors
         if i <= T_degree:
             return self.T.child(v,j)
         
@@ -80,7 +78,7 @@ class UndirectedTrexGraph:
         # checking "inneighbors" in A_prime
         remaining -= A_prime_outdeg 
         if remaining <= self.A_prime.rank(len(self.A_prime) - 1, v):
-            # position in A_prime where the
+            # position in A_prime where the desired edge lies
             pos_A = self.A_prime.select(remaining, v)
             # position in S_prime where this edge is declared
             pos_S = self.S_prime.select(pos_A+1, 0)

@@ -1,7 +1,6 @@
 from src.structure.Builder import Builder
 import networkx as nx
 import random
-import sys
 import unittest
 class TestAutomated(unittest.TestCase):
     def check_directed_graph(self, G: nx.DiGraph):
@@ -15,7 +14,6 @@ class TestAutomated(unittest.TestCase):
 
         for node in G.nodes():
             new_node = node_map[node]
-
 
             self.assertEqual(graph.outdegree(new_node), G.out_degree(node))
             self.assertEqual(graph.indegree(new_node), G.in_degree(node))
@@ -42,11 +40,13 @@ class TestAutomated(unittest.TestCase):
                 outneighbor = graph.outneighbor(new_node, i)
                 outneighbor_original = inverse_map[outneighbor]
                 graph_outgoing.add(outneighbor_original)
+                self.assertEqual(graph.outneighbor_rank(new_node, outneighbor), i)
             
             for i in range (1, graph.indegree(new_node) + 1):
                 inneighbor = graph.inneighbor(new_node, i)
                 inneighbor_original = inverse_map[inneighbor]
                 graph_ingoing.add(inneighbor_original)
+                self.assertEqual(graph.inneighbor_rank(new_node, inneighbor), i)
 
             self.assertEqual(G_outgoing, graph_outgoing)
             self.assertEqual(G_ingoing, graph_ingoing)
@@ -77,6 +77,7 @@ class TestAutomated(unittest.TestCase):
                 neighbor = graph.neighbor(new_node, i)
                 neighbor_original = inverse_map[neighbor]
                 graph_neighbors.add(neighbor_original)
+                self.assertEqual(graph.neighbor_rank(new_node, neighbor), i)
             
             self.assertEqual(G_neighbors, graph_neighbors)
 
@@ -88,10 +89,6 @@ class TestAutomated(unittest.TestCase):
         for i in range(number):
             G = nx.erdos_renyi_graph(random.randint(1, 100), random.random(), directed = False)
             self.check_undirected_graph(G)
-
-        print("all automated tests passed")
-
-
         
     def complete_test(self, number: int):
 
@@ -101,7 +98,6 @@ class TestAutomated(unittest.TestCase):
         empty_directed = empty_undirected.to_directed()
         dense_undirected = nx.complete_graph(10)
         dense_directed = dense_undirected.to_directed()
-
 
         self.check_undirected_graph(empty_undirected)
         self.check_directed_graph(empty_directed)
