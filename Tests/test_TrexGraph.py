@@ -3,7 +3,6 @@ import unittest
 
 from src.structure.Builder import Builder
 import networkx as nx
-import math 
 class test_TrexGraph(unittest.TestCase):
 
     
