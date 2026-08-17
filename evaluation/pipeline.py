@@ -76,7 +76,7 @@ def trex_on_directory(directory: str, output_path = "trex_results.csv", undirect
 
     df["alpha 1.7"] = df["n"]/df["non zero indegree nodes"]
     df["density"] = df["m"]/df["n"]
-    df.to_csv(output_path, sep = ';', decimal = ',')
+    df.to_csv(output_path)
     return df
 
 
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     parser.add_argument("--random", action = "store_true")
 
     args = parser.parse_args()
-    
+
     extraction_strategy = "greedy"
     if args.antiGreedy:
          extraction_strategy = "anti-greedy"

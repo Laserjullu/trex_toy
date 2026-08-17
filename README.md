@@ -18,7 +18,7 @@ python -m evaluation.pipeline path/to/edgelist/directory [--undirected] [--outpu
 Where `--undirected` must be applied for undirected graphs and `--output` can be specified, if the csv file containing the results (apart from the print statements) should not be stored as `trex_results.csv` within the working directory (`trex_toy`). 
 
 ## Reproducing the Thesis Results
-All the figures — except the data from the regression — used in the thesis are displayed in `results.csv`. To replicate most, the pipeline must be run once on each of the (unzipped) five dataset categories (or twice, if broader categorized by directed/undirected). To additionally get the figures for the different tree extraction strategies, a further run with the `--anti-greedy` and `--random` flags set, is necessary. The figures for the regression can be computed by executing `model.py`, which includes the once manually entered data-points for the regression. 
+All the figures — except the data from the regression — used in the thesis are displayed in `results.csv`. To replicate most, the pipeline must be run once on each of the (unzipped) five dataset categories (or twice, if broader categorized by directed/undirected). To additionally get the figures for the different tree extraction strategies, a further run with the `--antiGreedy` and `--random` flags set, is necessary. The figures for the regression can be computed by executing `model.py`, which includes the once manually entered data-points for the regression. 
 
 Finally, many of the figures in the thesis are simple deviations of numbers computed by `pipeline.py`. Therefore, to preserve clarity, some of the original figures are omitted in the CSV, and only the final ones are displayed.
 
