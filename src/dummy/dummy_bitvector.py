@@ -13,6 +13,8 @@ class DummyBitvector(AbstractBitVector):
         return self.bits[i]
 
     def rank(self, i: int, bit: int = 1) -> int:
+        if i < 0:
+            return 0
         return self.bits[:i + 1].count(bit)
 
     def select(self, j: int, bit: int = 1) -> int:

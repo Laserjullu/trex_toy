@@ -39,25 +39,23 @@ x_test = sm.add_constant(x_test)
 
 model = sm.OLS(y_log, x_log).fit()
 y_predicted = model.predict(x_test)
-print(model.summary())
 
+print(model.summary())
+print("\n validation R^2")
 print(sk.r2_score(np.exp2(y_actual), np.exp2(y_predicted)))
-print("Mean absolut error:")
+print("\n Mean absolute error:")
 print(sk.mean_absolute_error(np.exp2(y_actual), np.exp2(y_predicted)))
 
+print("\n prediction for G_A/G_B:")
 data = [[1.0, np.log2(2.997)]]
 print(np.exp2(model.predict(data)))
-print(np.column_stack((np.exp2(y_actual), np.exp2(y_predicted))))
-
-
-
 
 # setting the slope to -1 manually but not refitting Beta_0
 
 y_predicted_log_manual = model.params[0] - 1.0 * x_test[:, 1]
 
-
+print("\nmodels prediction, models prediction (beta_1 = 1, beta_0 unchanged), actual value")
 print(np.column_stack((np.exp2(y_predicted), np.exp2(y_predicted_log_manual), np.exp2(y_actual))))
 
-print("Mean absolute error with a descent of -1")
+print("\nMean absolute error with beta_1 = 1 and beta_0 unchanged")
 print(sk.mean_absolute_error(np.exp2(y_actual), np.exp2(y_predicted_log_manual)))

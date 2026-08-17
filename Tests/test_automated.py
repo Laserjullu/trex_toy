@@ -105,4 +105,4 @@ class TestAutomated(unittest.TestCase):
         self.check_directed_graph(dense_directed)
 
     def test_all(self):
-        self.complete_test(10)
+        self.complete_test(1000)

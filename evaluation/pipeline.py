@@ -8,7 +8,7 @@ import argparse
 import numpy as np
 
 # only reads edgelists in format source target
-def trex_on_directory(directory: str, output_path = "trex_results.csv", undirected = False):
+def trex_on_directory(directory: str, output_path = "trex_results.csv", undirected = False, extraction_strategy = "greedy"):
 
     results_as_dict = []
     builder = Builder()
@@ -23,7 +23,12 @@ def trex_on_directory(directory: str, output_path = "trex_results.csv", undirect
         if undirected:
             G = nx.read_edgelist(path, create_using=nx.Graph(), comments = '#')
             start = time.time()
-            G_built, G_minus_T, G_greedy = builder.build(G)
+            if extraction_strategy == "greedy":
+                G_built, G_minus_T, G_greedy = builder.build(G)
+            if extraction_strategy == "anti-greedy":
+                G_built, G_minus_T, G_greedy = builder.build(G, extraction_strategy = "anti-greedy")
+            if extraction_strategy == "random":
+                G_built, G_minus_T, G_greedy = builder.build(G, extraction_strategy = "random")
             trex_time = time.time() - start
 
             start = time.time()
@@ -37,7 +42,12 @@ def trex_on_directory(directory: str, output_path = "trex_results.csv", undirect
         else:
             G = nx.read_edgelist(path, create_using=nx.DiGraph(), comments = '#')
             start = time.time()
-            G_built, G_minus_T = builder.build(G)
+            if extraction_strategy == "greedy":
+                G_built, G_minus_T = builder.build(G)
+            if extraction_strategy == "anti-greedy":
+                            G_built, G_minus_T = builder.build(G, extraction_strategy= "anti-greedy")
+            if extraction_strategy == "random":
+                            G_built, G_minus_T = builder.build(G, extraction_strategy = "random")
             trex_time = time.time() - start
 
             start = time.time()
@@ -74,17 +84,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("directory")
     parser.add_argument("--undirected", action = "store_true")
-    parser.add_argument("--output")
+    parser.add_argument("--output", default ="trex_results.csv")
+    parser.add_argument("--antiGreedy", action = "store_true")
+    parser.add_argument("--random", action = "store_true")
 
     args = parser.parse_args()
-    if args.undirected:
-        if args.output:
-            df = trex_on_directory(args.directory, undirected = True, output_path = args.output)
-        else: 
-            df = trex_on_directory(args.directory, undirected = True)
-    else:
-        if args.output:
-            df = trex_on_directory(args.directory, undirected = False, output_path = args.output)
-        else: 
-            df = trex_on_directory(args.directory, undirected = False)
+    
+    extraction_strategy = "greedy"
+    if args.antiGreedy:
+         extraction_strategy = "anti-greedy"
+    if args.random:
+         extraction_strategy = "random"
 
+    df = trex_on_directory(args.directory, undirected = args.undirected, extraction_strategy = extraction_strategy, output_path= args.output)
